@@ -1,6 +1,7 @@
 ---
 name: path-ui
 description: Replicate the UI and interaction feel of Path, the private social journal app (2010–2018), and extend its way of designing to things Path never had. Covers the arc-burst + button, scrollbar clock, type-dot timeline, in-place emotion picker, swinging drop modals, elastic pull-to-refresh and debossed loaders, plus rules distilled from them (where motion comes from, motion ranked by importance, stillness at rest, in-place feedback, one hue and one glyph per content type) for designing new things in Path's spirit. Ships measured timings and colors, a zero-dependency JS/CSS kit of motion parts and original glyphs with TS types, two demos, a single-file inliner, a checker and a motion probe. Use whenever the user mentions Path, 复刻 Path、Path 风格、Path 的效果/动效/交互/思路/感觉、像 Path 那样, or asks for a radial/fan-out + menu, a scrolling time indicator, a family/private timeline, emotion reactions, bouncy drop modals or similar crafted micro-interactions, even if Path isn't named.
+license: MIT
 ---
 
 # 复刻 Path 的效果，按 Path 的思路做新东西
