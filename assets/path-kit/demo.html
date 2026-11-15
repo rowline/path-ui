@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>家庭时间线 · 交互演示</title>
+<link rel="stylesheet" href="path-kit.css">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: #e7e1da; font: 14px/1.5 -apple-system, "PingFang SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif; color: #3a3633; }
+  .page { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; align-items: flex-start; padding: 28px 16px 48px; }
+  .panel { width: 300px; display: grid; gap: 16px; }
+  .panel h1 { margin: 0; font-size: 20px; }
+  .panel p { margin: 0; color: #6f6862; }
+  .panel fieldset { margin: 0; padding: 10px 12px 12px; border: 0; border-radius: 10px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .panel legend { padding: 0; font-weight: 700; float: left; width: 100%; margin-bottom: 6px; }
+  .panel label { display: inline-flex; align-items: center; gap: 4px; margin-right: 10px; min-height: 32px; }
+  .panel .btns { display: grid; gap: 8px; }
+  .panel button.act { min-height: 40px; border: 0; border-radius: 8px; background: #3a3633; color: #fff; font: inherit; cursor: pointer; }
+  .panel ul { margin: 0; padding-left: 18px; color: #6f6862; }
+  .swatch { display: grid; gap: 8px; margin-top: 8px; padding: 10px; border-radius: 8px; background: var(--pk-paper); }
+  .swatch-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .swatch-type { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: #fff; }
+  .swatch-type svg { width: 16px; height: 16px; }
+
+  .phone { position: relative; width: 390px; max-width: 100%; height: 780px; border-radius: 34px; overflow: hidden; background: var(--pk-paper); box-shadow: 0 0 0 10px #2b2826, 0 24px 60px rgba(0,0,0,.35); --pk-strip: 48px; }
+  .bar { position: absolute; left: 0; right: 0; top: 0; height: var(--pk-bar-h); display: flex; align-items: center; justify-content: space-between; padding: 0 6px; background: var(--pk-bar-bg); color: #fff; box-shadow: 0 1px 0 rgba(0,0,0,.15); z-index: 20; }
+  .bar h2 { margin: 0; font-size: 19px; letter-spacing: .5px; }
+  .bar button { width: 44px; height: 44px; border: 0; background: transparent; color: #fff; display: grid; place-items: center; cursor: pointer; }
+  .bar svg { width: 22px; height: 22px; }
+  .scroll { position: absolute; left: 0; right: 0; top: var(--pk-bar-h); bottom: 0; overflow-y: auto; overscroll-behavior-y: contain; } /* 原生滚动条由 timeScroller 负责藏 */
+  [data-pk-skin="p4"] .scroll { bottom: 56px; }
+  .cover-me { position: absolute; left: 16px; bottom: 18px; display: flex; align-items: flex-end; gap: 12px; }
+  .cover-me .pk-avatar { width: 64px; height: 64px; font-size: 22px; --pk-avatar: #d98c5f; }
+  /* 手机里的颜色都走 --pk-* 变量，切深色主题时跟着变 */
+  .phone { color: var(--pk-ink); }
+  .tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 56px; display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; justify-items: center; background: color-mix(in srgb, var(--pk-paper) 45%, var(--pk-card)); box-shadow: 0 -1px 0 var(--pk-rule); }
+  .tabbar button.tab { width: 44px; height: 44px; border: 0; background: transparent; color: var(--pk-ink-2); display: grid; place-items: center; }
+  .tabbar svg { width: 22px; height: 22px; }
+  [data-pk-skin="p2"] .tabbar { display: none; }
+  .menu-slot { --pk-toggle: 48px; }
+  .corner-slot { position: absolute; left: 14px; bottom: 14px; }
+  .corner-slot.is-right { left: auto; right: 22px; }
+  [data-pk-skin="p4"] .corner-slot { display: none; }
+  .loader-row { padding: 18px 0 6px; }
+  .composer { padding: 16px; display: grid; gap: 12px; }
+  .composer h3, .card-pad h3 { margin: 0; font-size: 16px; }
+  .composer textarea, .card-pad input { width: 100%; border: 0; border-radius: 6px; background: var(--pk-wash); color: inherit; padding: 10px 12px; font: inherit; resize: none; }
+  .chips { display: flex; gap: 8px; }
+  .chips span { padding: 6px 12px; border-radius: 16px; background: #8a827b; color: #fff; font-size: 13px; }
+  .row-btns { display: flex; border-top: 1px solid var(--pk-rule); }
+  .row-btns button { flex: 1; min-height: 46px; border: 0; background: transparent; font: inherit; color: var(--pk-brand); cursor: pointer; }
+  .row-btns button + button { border-left: 1px solid var(--pk-rule); font-weight: 700; }
+  .card-pad { padding: 16px; display: grid; gap: 10px; }
+  .guide { background: var(--pk-brand); color: #fff; }
+  .guide section { padding: 28px 22px 6px; text-align: center; }
+  .guide section svg { width: 84px; height: 84px; margin-bottom: 10px; }
+  .guide h3 { margin: 0 0 6px; font-size: 17px; }
+  .guide p { margin: 0; opacity: .9; }
+  .guide .row-btns { border-color: rgba(255,255,255,.25); }
+  .guide .row-btns button { color: #fff; }
+  .family li { display: flex; align-items: center; gap: 10px; padding: 4px 8px 4px 16px; list-style: none; }
+  .family ul { margin: 0; padding: 6px 0; }
+  .family .pk-avatar { width: 34px; height: 34px; border-radius: 6px; box-shadow: none; font-size: 13px; }
+  .family li span.name { flex: 1; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="panel">
+    <h1>交互演示</h1>
+    <!-- 界面上不写 Path 的名字（skill 底线），出处写在注释里：效果和数字照 Path 录屏与开源复刻代码做。 -->
+    <p>效果和数字照录屏与开源复刻代码做，图标、表情、封面、文字都是原创占位。</p>
+    <fieldset>
+      <legend>年代</legend>
+      <label><input type="radio" name="skin" value="p4" checked> 扁平（2014–16）</label>
+      <label><input type="radio" name="skin" value="p2"> 拟物（2011–12）</label>
+    </fieldset>
+    <fieldset>
+      <legend>主题</legend>
+      <label><input type="radio" name="theme" value="light" checked> 浅色</label>
+      <label><input type="radio" name="theme" value="dark"> 深色</label>
+      <label><input type="radio" name="theme" value="auto"> 跟随系统</label>
+      <p style="font-size:12px">原版没有深色，深色的颜色是自定的。</p>
+    </fieldset>
+    <fieldset>
+      <legend>颜色</legend>
+      <label><input type="radio" name="contrast" value="" checked> 原样</label>
+      <label><input type="radio" name="contrast" value="more"> 加深（网页对比度）</label>
+      <p style="font-size:12px">原样的黄、青、橙、绿底配白字形，对比度不到 3:1；加深版保持色相、降明度。</p>
+      <div class="pk-root swatch" id="swatch" data-pk-skin="p4">
+        <div class="swatch-row" id="swatch-types"></div>
+        <div class="swatch-row" id="swatch-chips"></div>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>强度</legend>
+      <label><input type="radio" name="k" value="1" checked> 原样</label>
+      <label><input type="radio" name="k" value="0.4"> 克制</label>
+      <label><input type="radio" name="k" value="0"> 关</label>
+    </fieldset>
+    <fieldset>
+      <legend>发布菜单</legend>
+      <label><input type="radio" name="count" value="3"> 3 个</label>
+      <label><input type="radio" name="count" value="0" checked> 原样</label>
+      <label><input type="radio" name="count" value="6"> 6 个</label>
+      <br>
+      <label><input type="radio" name="side" value="left" checked> 加号在左下</label>
+      <label><input type="radio" name="side" value="right"> 右下</label>
+      <p style="font-size:12px">位置只对拟物版有用；扁平版的加号总在底栏正中。</p>
+    </fieldset>
+    <div class="btns">
+      <button class="act" id="btn-login">掉落弹窗</button>
+      <button class="act" id="btn-guide">引导卡片</button>
+      <button class="act" id="btn-family">家人星标</button>
+      <button class="act" id="btn-loader">压印加载</button>
+    </div>
+    <ul>
+      <li>点 + ：发布菜单，选一个看放大消散</li>
+      <li>滚动列表：右边的时钟</li>
+      <li>在顶部按住往下拖：下拉刷新的水滴</li>
+      <li>点每条右边的笑脸：情绪回应</li>
+    </ul>
+  </div>
+
+  <div class="phone pk-root" id="phone" data-pk-skin="p4">
+    <header class="bar">
+      <button aria-label="菜单"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+      <h2>我家</h2>
+      <button aria-label="家人"><svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="3.2" fill="currentColor"/><circle cx="16.5" cy="10" r="2.6" fill="currentColor"/><path d="M3.5 19c.6-3.4 2.8-5.2 5.5-5.2s4.9 1.8 5.5 5.2zM14.6 14.2c2.6-.5 4.9.9 5.6 4.8h-4.4" fill="currentColor"/></svg></button>
+    </header>
+
+    <div class="scroll" id="scroll">
+      <div class="pk-cover" id="cover">
+        <div class="pk-cover-img" id="cover-img" style="background-image: linear-gradient(180deg, #f6c79b 0%, #e08a62 38%, #8c5a6e 70%, #4c3f5c 100%);">
+          <svg viewBox="0 0 390 260" preserveAspectRatio="none" style="position:absolute;inset:auto 0 0 0;width:100%;height:60%"><path d="M0 170 Q90 110 170 150 T390 120 V260 H0z" fill="#5b4560" opacity=".8"/><path d="M0 210 Q120 160 240 200 T390 185 V260 H0z" fill="#3b3047"/></svg>
+        </div>
+        <div class="pk-cover-shade"></div>
+        <div class="cover-me" id="cover-me">
+          <div class="pk-avatar">家</div>
+          <div class="pk-context"><b>我家</b>傍晚 · 小雨 18°C</div>
+        </div>
+        <div class="pk-cover-compact" id="cover-compact">我家</div>
+      </div>
+      <div class="pk-timeline" id="timeline">
+        <div id="pull-head"></div>
+        <div id="loader-slot"></div>
+        <div id="moments"></div>
+        <div class="pk-feed-end" aria-hidden="true"><svg viewBox="0 0 54 18"><path d="M3 9h17M34 9h17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M27 3.5l5.5 5.5-5.5 5.5-5.5-5.5z" fill="currentColor"/></svg></div>
+      </div>
+    </div>
+
+    <nav class="tabbar">
+      <button class="tab" aria-label="时间线"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V12l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+      <button class="tab" aria-label="动态"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button>
+      <div class="menu-slot" id="center-slot"></div>
+      <button class="tab" aria-label="家人"><svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="3.2" fill="currentColor"/><path d="M3.5 19c.6-3.4 2.8-5.2 5.5-5.2s4.9 1.8 5.5 5.2z" fill="currentColor"/></svg></button>
+      <button class="tab" aria-label="照片"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6 17l4.5-5 3 3.5 2-2L19 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button>
+    </nav>
+    <div class="corner-slot menu-slot" id="corner-slot"></div>
+  </div>
+</div>
+
+<script type="module">
+import { radialMenu, timeScroller, reactionPicker, popIn, dropModal, pagerDots, coverHeader, pullToRefresh, popToggle, relayLoader, setIntensity, faceSvg, glyphSvg } from './path-kit.js';
+
+const phone = document.getElementById('phone');
+const scroll = document.getElementById('scroll');
+const momentsEl = document.getElementById('moments');
+
+// 字形都用 kit 的原创字形表（规则 13：一套字形，发布菜单、时间线小圆、压印加载里同一个形状）
+const I = {
+  ...Object.fromEntries(['photo', 'place', 'music', 'thought', 'sleep', 'people'].map((id) => [id, glyphSvg(id)])),
+  // 回应按钮是细线笑脸：它是「去回应」的入口，不是内容类型，所以不进类型字形表
+  smile: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="10.3" r="1.2" fill="currentColor"/><circle cx="15" cy="10.3" r="1.2" fill="currentColor"/><path d="M8.5 14q3.5 3.4 7 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  star: glyphSvg('star').replace('class="pk-glyph"', 'class="pk-glyph pk-star"'),
+};
+const TYPES = {
+  photo: { label: '照片', color: 'var(--pk-type-photo)' },
+  people: { label: '和谁在一起', color: 'var(--pk-type-people)' },
+  place: { label: '在哪', color: 'var(--pk-type-place)' },
+  music: { label: '在听', color: 'var(--pk-type-music)' },
+  thought: { label: '想说的话', color: 'var(--pk-type-thought)' },
+  sleep: { label: '睡了 / 起了', color: 'var(--pk-type-sleep)' },
+};
+const FAMILY = { 妈: '#d98c5f', 爸: '#7d8fa6', 姐: '#b07aa1', 乐: '#6fa58b', 外婆: '#a69276' };
+
+// 时间相对现在生成，好让时钟显示今天、星期几、几月几日、去年
+const now = new Date();
+const ago = (h) => new Date(now.getTime() - h * 3600e3);
+const SEED = [
+  { who: '妈', type: 'place', t: ago(0.4), html: '到 <b>家</b> 了', sub: '小雨 18°C' },
+  { who: '乐', type: 'photo', t: ago(5), html: '午饭：番茄炒蛋', photo: 'linear-gradient(135deg,#f2b36b,#d9573b 55%,#7a3b2e)' },
+  { who: '爸', type: 'music', t: ago(9), html: '在听 <b>一张老唱片</b>', sub: '客厅音箱' },
+  { who: '姐', type: 'thought', t: ago(30), html: '这周终于过完了' },
+  { who: '爸', type: 'sleep', t: ago(54), html: '起床了', sub: '睡了 7 小时' },
+  { who: '乐', type: 'people', t: ago(80), html: '和 <b>外婆</b>、<b>妈</b> 在一起' },
+  { who: '妈', type: 'photo', t: ago(24 * 9), html: '阳台的花开了', photo: 'linear-gradient(135deg,#f6e3a1,#e7a3b6 50%,#8bb07a)' },
+  { who: '外婆', type: 'place', t: ago(24 * 40), html: '在 <b>菜市场</b>', sub: '早上 7 点' },
+  { who: '姐', type: 'thought', t: ago(24 * 75), html: '记得给阳台的花浇水' },
+  { who: '爸', type: 'sleep', t: ago(24 * 400), html: '睡了', sub: '去年的今天' },
+  { who: '乐', type: 'music', t: ago(24 * 420), html: '在练 <b>一首新曲子</b>' },
+];
+
+function momentEl(m) {
+  const el = document.createElement('article');
+  el.className = 'pk-moment';
+  el.dataset.time = m.t.toISOString();
+  el.innerHTML = `
+    <div class="pk-avatar pk-moment-who" style="--pk-avatar:${FAMILY[m.who]}">${m.who}</div>
+    <span class="pk-moment-type" style="--pk-type:${TYPES[m.type].color}" aria-label="${TYPES[m.type].label}">${I[m.type]}</span>
+    <div class="pk-moment-body">${m.html}${m.sub ? `<small>${m.sub}</small>` : ''}${m.photo ? `<div class="pk-moment-photo" style="--pk-photo:${m.photo}"></div>` : ''}<div class="pk-reacts"></div></div>
+    <button type="button" class="pk-moment-react" aria-label="回应"><span>${I.smile}</span></button>`;
+  const btn = el.querySelector('.pk-moment-react');
+  reactionPicker(btn, {
+    host: phone,
+    seen: { count: 2, total: 4 },
+    onPick(face) {
+      const chip = document.createElement('span');
+      chip.style.setProperty('--pk-avatar', FAMILY['乐']);
+      chip.innerHTML = faceSvg(face);
+      el.querySelector('.pk-reacts').appendChild(chip);
+      popIn(chip);
+    },
+  });
+  return el;
+}
+SEED.forEach((m) => momentsEl.appendChild(momentEl(m)));
+
+// 封面头部 + 下拉刷新 + 时钟
+const cover = coverHeader(scroll, {
+  cover: document.getElementById('cover'),
+  img: document.getElementById('cover-img'),
+  fade: [document.getElementById('cover-me')],
+  compact: document.getElementById('cover-compact'),
+});
+pullToRefresh(scroll, {
+  content: document.getElementById('timeline'),
+  head: document.getElementById('pull-head'),
+  onPull: (d) => cover.setPull(d),
+  onRefresh: () => new Promise((r) => setTimeout(r, 1400)),
+});
+timeScroller(scroll, { host: phone });
+
+// 发布菜单（随时代切换）
+const MENU = {
+  center: ['music', 'place', 'photo', 'thought', 'sleep'],
+  corner: ['photo', 'people', 'place', 'music', 'thought', 'sleep'],
+};
+const ALL = ['photo', 'people', 'place', 'music', 'thought', 'sleep'];
+let menu = null;
+const pick = (name) => document.querySelector(`input[name=${name}]:checked`).value;
+function buildMenu() {
+  menu?.destroy();
+  const variant = phone.dataset.pkSkin === 'p2' ? 'corner' : 'center';
+  const slot = document.getElementById(variant === 'corner' ? 'corner-slot' : 'center-slot');
+  document.getElementById('corner-slot').classList.toggle('is-right', pick('side') === 'right');
+  const count = Number(pick('count'));
+  const ids = count ? ALL.slice(0, count) : MENU[variant];
+  menu = radialMenu(slot, {
+    variant,
+    host: phone,
+    items: ids.map((id) => ({ id, label: TYPES[id].label, icon: I[id], color: TYPES[id].color })),
+    onSelect: (item) => openComposer(item),
+  }); // side 默认 'auto'：加号挪到右下角，图标自己改成往左上方弹
+}
+
+function openComposer(item) {
+  const box = document.createElement('div');
+  box.className = 'composer';
+  box.innerHTML = `<h3>记一笔 · ${TYPES[item.id].label}</h3><textarea rows="3" placeholder="说点什么"></textarea><div class="chips"><span>和 2 位家人</span><span>在家</span></div>`;
+  const btns = document.createElement('div');
+  btns.className = 'row-btns';
+  btns.innerHTML = '<button type="button">取消</button><button type="button">发布</button>';
+  const wrap = document.createElement('div');
+  wrap.append(box, btns);
+  const m = dropModal({ host: phone, content: wrap, label: '记一笔' });
+  btns.children[0].onclick = () => m.close();
+  btns.children[1].onclick = async () => {
+    const text = box.querySelector('textarea').value.trim() || '刚刚记了一笔';
+    await m.close();
+    scroll.scrollTo({ top: 0, behavior: 'smooth' });
+    const el = momentEl({ who: '乐', type: item.id, t: new Date(), html: text.replace(/[<>&]/g, '') });
+    momentsEl.prepend(el);
+    popIn(el.querySelector('.pk-moment-type'));
+  };
+  m.open();
+}
+
+// 面板按钮
+document.getElementById('btn-login').onclick = () => {
+  const wrap = document.createElement('div');
+  wrap.innerHTML = '<div class="card-pad"><h3>欢迎回家</h3><input type="email" placeholder="邮箱" autocomplete="off"><input type="password" placeholder="密码" autocomplete="off"></div><div class="row-btns"><button type="button">忘记了？</button><button type="button">登录</button></div>';
+  const m = dropModal({ host: phone, content: wrap, label: '登录' });
+  wrap.querySelectorAll('.row-btns button').forEach((b) => { b.onclick = () => m.close(); });
+  m.open();
+};
+document.getElementById('btn-guide').onclick = () => {
+  const wrap = document.createElement('div');
+  wrap.className = 'guide';
+  const pages = [
+    ['星标', '给最亲的几个人加星，他们的动静排在最前面。', '<path d="M42 10l9 18.5 20.4 3-14.7 14.3 3.5 20.2L42 56.5 23.8 66l3.5-20.2L12.6 31.5 33 28.5z" fill="#fff"/>'],
+    ['只给家里人', '发出去的每一条，默认只有家里人看得到。', '<path d="M28 38v-8a14 14 0 0 1 28 0v8h2a4 4 0 0 1 4 4v24a4 4 0 0 1-4 4H26a4 4 0 0 1-4-4V42a4 4 0 0 1 4-4zm6 0h16v-8a8 8 0 0 0-16 0z" fill="#fff"/>'],
+    ['谁看过', '每条下面会告诉你，家里谁已经看过。', '<path d="M42 24c14 0 24 12 28 18-4 6-14 18-28 18S18 48 14 42c4-6 14-18 28-18zm0 8a10 10 0 1 0 0 20 10 10 0 0 0 0-20z" fill="#fff"/>'],
+  ];
+  wrap.innerHTML = `<div class="pk-pager">${pages.map(([h, p, g]) => `<section><svg viewBox="0 0 84 84">${g}</svg><h3>${h}</h3><p>${p}</p></section>`).join('')}</div><div class="pk-dots"></div><div class="row-btns"><button type="button">知道了</button></div>`;
+  const m = dropModal({ host: phone, content: wrap, label: '引导' });
+  wrap.querySelector('.row-btns button').onclick = () => m.close();
+  m.open().then(() => pagerDots(wrap.querySelector('.pk-pager'), wrap.querySelector('.pk-dots')));
+};
+document.getElementById('btn-family').onclick = () => {
+  const wrap = document.createElement('div');
+  wrap.className = 'family';
+  wrap.innerHTML = `<div class="card-pad"><h3>家人</h3></div><ul>${Object.entries(FAMILY).map(([n, c], i) => `<li><span class="pk-avatar" style="--pk-avatar:${c}">${n}</span><span class="name">${n}</span><button type="button" class="pk-star-btn" aria-label="星标 ${n}" aria-pressed="${i < 2}">${I.star}</button></li>`).join('')}</ul><div class="row-btns"><button type="button">好</button></div>`;
+  const m = dropModal({ host: phone, content: wrap, label: '家人' });
+  wrap.querySelectorAll('.pk-star-btn').forEach((b) => popToggle(b));
+  wrap.querySelector('.row-btns button').onclick = () => m.close();
+  m.open();
+};
+document.getElementById('btn-loader').onclick = () => {
+  const slot = document.getElementById('loader-slot');
+  if (slot.firstChild) return;
+  const el = document.createElement('div');
+  el.className = 'loader-row';
+  slot.appendChild(el);
+  relayLoader(el, [I.photo, I.place, I.music, I.thought, I.sleep]); // 压印加载用的也是类型字形
+  setTimeout(() => el.remove(), 3000);
+};
+
+// 时代、强度
+document.querySelectorAll('input[name=skin]').forEach((r) => r.addEventListener('change', () => { phone.dataset.pkSkin = r.value; buildMenu(); }));
+document.querySelectorAll('input[name=count], input[name=side]').forEach((r) => r.addEventListener('change', buildMenu));
+document.querySelectorAll('input[name=k]').forEach((r) => r.addEventListener('change', () => setIntensity(r.value)));
+// 颜色和字形参考：彩底白字形的类型圆（标签）、筛选块；切「加深」时手机和参考块一起换
+const swatch = document.getElementById('swatch');
+document.getElementById('swatch-types').innerHTML = Object.entries(TYPES)
+  .map(([id, t]) => `<span class="swatch-type" style="background:${t.color}" title="${t.label}">${glyphSvg(id, { label: t.label })}</span>`).join('');
+document.getElementById('swatch-chips').innerHTML = [['calendar', 'date', '十一月'], ['flower', 'spring', '春'], ['sun', 'summer', '夏'], ['leaf', 'fall', '秋'], ['snow', 'winter', '冬'], ['photo', 'photo', '照片']]
+  .map(([g, c, l]) => `<span class="pk-chip" style="--pk-chip:var(--pk-filter-${c});--pk-chip-ink:var(--pk-filter-${c}-ink, var(--pk-filter-ink))">${glyphSvg(g)}${l}</span>`).join('');
+document.querySelectorAll('input[name=contrast]').forEach((r) => r.addEventListener('change', () => {
+  for (const el of [phone, swatch]) {
+    if (r.value) el.dataset.pkContrast = r.value;
+    else delete el.dataset.pkContrast;
+  }
+}));
+document.querySelectorAll('input[name=theme]').forEach((r) => r.addEventListener('change', () => {
+  if (r.value === 'light') delete phone.dataset.pkTheme;
+  else phone.dataset.pkTheme = r.value;
+}));
+buildMenu();
+</script>
+</body>
+</html>

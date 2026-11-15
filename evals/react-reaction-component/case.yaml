@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: react-reaction-component
+expected_outcome: |
+  一个 ReactionButton.tsx（可带辅助文件），严格模式下能通过类型检查，不加新依赖；点心形按钮，旁边就地冒出浮层，约 200ms 淡入，五个原创表情依次弹出、略冲大再回落；选中后回调拿到表情 id，浮层收起；点外面和 Esc 能关，焦点回到心形按钮；表情是能用键盘操作的按钮；卸载和关闭时清掉所有监听；照顾减少动效；界面上不出现 Path 的素材和名字。

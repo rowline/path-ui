@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: corner-menu-right-four-items
+expected_outcome: |
+  一个单文件 HTML：右下角的加号点开后，4 个图标沿四分之一圆往左上方弹出（从正上到正左），不出屏；节奏是 Path 2 的 0.5 秒、依次错开、冲过头再回落、边飞边转；加号转成叉；点外面或 Esc 收回；外观是拟物的（布纹或渐变的红顶栏、实心彩色圆按钮带白圈或投影）；不用 Path 的素材和名字；照顾减少动效。

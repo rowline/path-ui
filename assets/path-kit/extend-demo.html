@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>推出来的两个例子</title>
+<link rel="stylesheet" href="path-kit.css">
+<!--
+  这一页演示「原 App 没有的东西，按规则推出来怎么做」：上传照片、滑动归档。
+  规则见 ../../references/essence.md 的「规则」一节；界面上不写来源 App 的名字（skill 底线）。
+  只用 path-kit 的零件拼：flyFrom / flyTo / fly / pop / fadeIn / dropModal / relayLoader / rubber / .pk-deboss。
+-->
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: #e7e1da; font: 14px/1.5 -apple-system, "PingFang SC", "Source Han Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif; color: #3a3633; }
+  .page { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; align-items: flex-start; padding: 28px 16px 48px; }
+  .panel { width: 300px; display: grid; gap: 14px; }
+  .panel h1 { margin: 0; font-size: 20px; }
+  .panel p, .panel li { margin: 0; color: #6f6862; }
+  .panel fieldset { margin: 0; padding: 10px 12px 12px; border: 0; border-radius: 10px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .panel legend { padding: 0; font-weight: 700; float: left; width: 100%; margin-bottom: 6px; }
+  .panel label { display: inline-flex; align-items: center; gap: 4px; margin-right: 10px; min-height: 32px; }
+  .panel ol { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+  .panel h2 { margin: 6px 0 0; font-size: 15px; }
+
+  .phone { position: relative; width: 360px; max-width: 100%; height: 700px; border-radius: 34px; overflow: hidden; background: var(--pk-paper); box-shadow: 0 0 0 10px #2b2826, 0 24px 60px rgba(0,0,0,.35); }
+  .bar { position: absolute; left: 0; right: 0; top: 0; height: var(--pk-bar-h); display: grid; place-items: center; background: var(--pk-bar-bg); color: #fff; box-shadow: 0 1px 0 rgba(0,0,0,.15); z-index: 20; }
+  .bar h2 { margin: 0; font-size: 18px; letter-spacing: .5px; }
+  .scroll { position: absolute; left: 0; right: 0; top: var(--pk-bar-h); bottom: 64px; overflow-y: auto; }
+  .dock { position: absolute; left: 0; right: 0; bottom: 0; height: 64px; display: grid; place-items: center; background: #fbf8f5; box-shadow: 0 -1px 0 rgba(0,0,0,.08); }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* ---- 相册 ---- */
+  .scope { margin: 0; padding: 12px 16px 4px; font-size: 12px; color: #8a827b; display: flex; align-items: center; gap: 6px; }
+  .scope svg { width: 13px; height: 13px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 8px 12px 16px; }
+  .tile { position: relative; margin: 0; aspect-ratio: 1; border-radius: 6px; background: var(--photo); overflow: hidden; }
+  .tile small { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 6px 4px; font-size: 11px; line-height: 1.3; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.45)); transform-origin: 0 100%; }
+  /* 上传是这一页最重要的动作，只有它用品牌色（规则 4） */
+  .upload { min-width: 168px; min-height: 44px; padding: 0 22px; border: 0; border-radius: 22px; background: var(--pk-brand); color: #fff; font: inherit; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .upload[aria-disabled="true"] { cursor: default; background: var(--pk-paper); box-shadow: inset 0 0 0 1px rgba(60,40,20,.14); }
+  .upload .pk-relay { gap: 14px; }
+  .upload .pk-relay svg { width: 20px; height: 20px; }
+  .ghost { position: absolute; z-index: 30; pointer-events: none; margin: 0; }
+
+  /* ---- 消息 ---- */
+  .list { list-style: none; margin: 0; padding: 6px 0 16px; }
+  .row { position: relative; overflow: hidden; touch-action: pan-y; user-select: none; }
+  .row + .row, .row + .undo, .undo + .row { border-top: 1px solid #eee5dd; }
+  .behind { position: absolute; inset: 0; display: flex; align-items: center; justify-content: flex-end; padding-right: 22px; background: #ded6ce; color: #8a827b; }
+  .row.is-armed .behind { background: #8a827b; color: #fff; }
+  .behind svg { width: 22px; height: 22px; }
+  .face { position: relative; display: flex; align-items: center; gap: 10px; padding: 10px 8px 10px 16px; background: var(--pk-paper); }
+  .face .pk-avatar { width: 36px; height: 36px; border-radius: 6px; box-shadow: none; font-size: 13px; flex: none; }
+  .face .txt { flex: 1; min-width: 0; }
+  .face .txt b { display: block; font-size: 14px; }
+  .face .txt small { color: #8a827b; font-size: 12px; }
+  .face .arch { width: 44px; height: 44px; flex: none; border: 0; border-radius: 50%; background: transparent; color: #a39a92; display: grid; place-items: center; cursor: pointer; }
+  .face .arch svg { width: 20px; height: 20px; }
+  .undo { display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 16px; min-height: 44px; font-size: 13px; color: #8a827b; }
+  .undo button { min-height: 44px; padding: 0 12px; border: 0; background: transparent; color: var(--pk-ink); font: inherit; font-weight: 700; cursor: pointer; }
+  .empty { display: grid; justify-items: center; gap: 10px; padding: 80px 24px; text-align: center; color: #8a827b; }
+  .empty svg { width: 64px; height: 64px; }
+  .tabs { display: grid; grid-template-columns: repeat(2, 1fr); width: 100%; height: 100%; }
+  .tabs > div { display: grid; place-items: center; align-content: center; gap: 2px; font-size: 11px; color: #a39a92; }
+  .tabs > div.on { color: var(--pk-ink); }
+  .tabs svg { width: 22px; height: 22px; }
+  .tabs .count { position: relative; }
+  .tabs .badge { position: absolute; left: 14px; top: -6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #8a827b; color: #fff; font-size: 11px; line-height: 18px; text-align: center; font-weight: 700; }
+  .tabs .badge[hidden] { display: none; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="panel">
+    <h1>推出来的两个例子</h1>
+    <p>原来的 App 没有这两样东西。这里按规则推出每一步该怎么动，只用零件拼，没有另写曲线。</p>
+    <fieldset>
+      <legend>强度</legend>
+      <label><input type="radio" name="k" value="1" checked> 原样</label>
+      <label><input type="radio" name="k" value="0.4"> 克制</label>
+      <label><input type="radio" name="k" value="0"> 关</label>
+    </fieldset>
+    <fieldset>
+      <legend>上传</legend>
+      <label><input type="checkbox" id="fail-next"> 下一次上传失败</label>
+    </fieldset>
+    <h2>上传照片</h2>
+    <ol>
+      <li>按钮原地变成一排压印图标轮流变深（规则 7、10）</li>
+      <li>传好的照片从按钮飞进相册，冲过一点再停，旁边的照片让开（1、3）</li>
+      <li>照片下面写「刚刚 · 家里 4 个人能看到」（8）</li>
+      <li>传失败要你拿主意，用唯一那种掉落弹窗（5）</li>
+    </ol>
+    <h2>滑动归档</h2>
+    <ol>
+      <li>往左拖，跟着手、越拖越沉；过门槛时图标冒一下（9）</li>
+      <li>松手，消息飞进「已归档」，数字冒一下（1、3）；没过门槛就弹回去</li>
+      <li>原地留一行「撤销」，撤销时倒着飞回来（2、7）</li>
+      <li>每条都有归档按钮，用键盘也能做（9）</li>
+      <li>都归档了，出现压印的空状态（10）</li>
+    </ol>
+  </div>
+
+  <!-- 相册：上传照片 -->
+  <div class="phone pk-root" id="album" data-pk-skin="p4">
+    <header class="bar"><h2>相册</h2></header>
+    <div class="scroll" id="album-scroll">
+      <p class="scope"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 7V5a3 3 0 0 1 6 0v2h.5a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1zm1.5 0h3V5a1.5 1.5 0 0 0-3 0z" fill="currentColor"/></svg>这本相册只有家里 4 个人能看到</p>
+      <div class="grid" id="grid"></div>
+    </div>
+    <footer class="dock"><button type="button" class="upload" id="upload"><span id="upload-label">上传照片</span></button></footer>
+    <p class="sr" aria-live="polite" id="album-status"></p>
+  </div>
+
+  <!-- 消息：滑动归档 -->
+  <div class="phone pk-root" id="inbox" data-pk-skin="p4">
+    <header class="bar"><h2>家里的消息</h2></header>
+    <div class="scroll" id="inbox-scroll"><ul class="list" id="list"></ul></div>
+    <footer class="dock">
+      <nav class="tabs">
+        <div class="on"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v10H8l-4 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>消息</div>
+        <div id="archived-tab"><span class="count"><svg id="archived-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v4H4zM5.5 9h13v10h-13z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M10 13h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><b class="badge" id="badge" hidden>0</b></span>已归档</div>
+      </nav>
+    </footer>
+    <p class="sr" aria-live="polite" id="inbox-status"></p>
+  </div>
+</div>
+
+<script type="module">
+import { flyFrom, flyTo, fly, pop, fadeIn, dropModal, relayLoader, rubber, setIntensity, motion, glyphSvg } from './path-kit.js';
+
+const I = {
+  photo: glyphSvg('photo'), // 类型字形用 kit 的字形表（规则 13）
+  people: glyphSvg('people'),
+  place: glyphSvg('place'),
+  archive: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v4H4zM5.5 9h13v10h-13z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M10 13h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+  done: '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M12 30h40v22H12z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M8 22h48v8H8z" fill="currentColor"/><path d="M24 41l6 5 11-11" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
+const FAMILY = { 妈: '#d98c5f', 爸: '#7d8fa6', 姐: '#b07aa1', 乐: '#6fa58b', 外婆: '#a69276' };
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const esc = (s) => s.replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+
+// 时间相对现在生成；锚点保证任何一天打开，「今天 / 星期几 / 几月几日 / 去年」都看得到（1 月 1–7 日没有「今年更早」这一档）
+const now = new Date();
+const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+const DAY = 864e5;
+const A = {
+  today: new Date(now - Math.min(2 * 3600e3, (now - today0) / 2)),
+  weekday: new Date(+today0 - 3 * DAY + 10 * 3600e3),
+  thisYear: new Date(now.getFullYear(), 0, 1, 9),
+  lastYear: new Date(now.getFullYear() - 1, 5, 15, 20),
+};
+// 日期写法和滚动时钟一样（规则 8）：当天只写时间，一周内写星期几，今年写几月几日，更早带年份
+function when(d) {
+  if (now - d < 60e3) return '刚刚';
+  const diff = Math.round((+today0 - +new Date(d.getFullYear(), d.getMonth(), d.getDate())) / DAY);
+  if (diff === 0) return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+  if (diff > 0 && diff < 7) return d.toLocaleDateString('zh-CN', { weekday: 'long' });
+  if (d.getFullYear() === now.getFullYear()) return d.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' });
+  return d.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+// 位置变了的元素从旧位置滑到新位置（不冲过头：让位的东西不是主角，规则 4）
+function slide(els, mutate) {
+  const before = new Map(els.map((el) => [el, el.getBoundingClientRect()]));
+  mutate();
+  before.forEach((r, el) => {
+    if (!el.isConnected) return;
+    const n = el.getBoundingClientRect();
+    const dx = r.left - n.left, dy = r.top - n.top;
+    if (dx || dy) fly(el, { from: [dx, dy], to: [0, 0], ms: 250, easing: motion.ease.out, fill: 'none' });
+  });
+}
+// 列表在滚动区里，飞出去会被裁掉：在手机这一层放一个替身去飞
+function ghostOf(el, host) {
+  const hr = host.getBoundingClientRect();
+  const r = el.getBoundingClientRect();
+  const g = el.cloneNode(true);
+  g.classList.add('ghost');
+  g.removeAttribute('id');
+  g.setAttribute('aria-hidden', 'true');
+  g.querySelectorAll('button').forEach((b) => { b.tabIndex = -1; });
+  Object.assign(g.style, { left: `${r.left - hr.left}px`, top: `${r.top - hr.top}px`, width: `${r.width}px`, height: `${r.height}px`, transform: '' });
+  host.appendChild(g);
+  return g;
+}
+
+// ---------------------------------------------------------------------------
+// 上传照片
+// ---------------------------------------------------------------------------
+const album = document.getElementById('album');
+const grid = document.getElementById('grid');
+const uploadBtn = document.getElementById('upload');
+const uploadLabel = document.getElementById('upload-label');
+const albumStatus = document.getElementById('album-status');
+const GRADS = ['linear-gradient(135deg,#f2b36b,#d9573b 55%,#7a3b2e)', 'linear-gradient(135deg,#f6e3a1,#e7a3b6 50%,#8bb07a)', 'linear-gradient(160deg,#9cc3d5,#5d7f9e 60%,#2f3e55)', 'linear-gradient(135deg,#d8e2b0,#8fb07a 55%,#4f6f4a)', 'linear-gradient(135deg,#f0c9a8,#c78a6e 50%,#6e4a5a)'];
+let gi = 0;
+function tile({ who, t, photo }) {
+  const el = document.createElement('figure');
+  el.className = 'tile';
+  el.style.setProperty('--photo', photo);
+  el.innerHTML = `<small>${esc(who)} · ${when(t)}</small>`;
+  el.setAttribute('role', 'img');
+  el.setAttribute('aria-label', `${who}的照片，${when(t)}`);
+  return el;
+}
+[
+  { who: '妈', t: A.today }, { who: '乐', t: A.weekday }, { who: '爸', t: A.weekday }, { who: '姐', t: A.thisYear },
+  { who: '外婆', t: A.thisYear }, { who: '爸', t: A.lastYear }, { who: '妈', t: A.lastYear },
+].forEach((p) => grid.appendChild(tile({ ...p, photo: GRADS[gi++ % GRADS.length] })));
+
+let busy = false;
+async function upload() {
+  if (busy) return;
+  busy = true;
+  // 就地：按钮自己变成「正在传」，不另开进度弹窗（规则 7）；等待用压印图标，不用转圈（规则 10）
+  uploadBtn.setAttribute('aria-disabled', 'true');
+  uploadLabel.hidden = true;
+  const loader = document.createElement('span');
+  uploadBtn.appendChild(loader);
+  relayLoader(loader, [I.photo, I.people, I.place]);
+  loader.setAttribute('aria-label', '正在上传');
+  albumStatus.textContent = '正在上传';
+  await wait(1600);
+  loader.remove();
+  uploadLabel.hidden = false;
+  uploadBtn.removeAttribute('aria-disabled');
+  busy = false;
+  const fail = document.getElementById('fail-next');
+  if (fail.checked) { fail.checked = false; askRetry(); return; }
+  await addPhoto();
+}
+async function addPhoto() {
+  document.getElementById('album-scroll').scrollTop = 0;
+  const el = tile({ who: '乐', t: new Date(), photo: GRADS[gi++ % GRADS.length] });
+  el.querySelector('small').textContent = '刚刚 · 家里 4 个人能看到'; // 规则 8：时间和谁看得到
+  slide([...grid.children], () => grid.prepend(el));
+  // 从哪来回哪去（规则 1）：从上传按钮飞进相册，冲过一点再停（规则 3）
+  el.style.visibility = 'hidden';
+  const g = ghostOf(el, album);
+  g.style.visibility = '';
+  await flyFrom(g, uploadBtn, { scale: [0.3, 1] }).finished;
+  el.style.visibility = '';
+  g.remove();
+  pop(el.querySelector('small'), { from: 1, peak: 0.15 });
+  albumStatus.textContent = '传好了，家里 4 个人能看到';
+}
+function askRetry() {
+  // 要用户拿主意：用全站唯一的那种弹窗（规则 5），压暗按浅色页面调浅
+  const wrap = document.createElement('div');
+  wrap.innerHTML = '<div style="padding:18px 18px 8px"><h3 style="margin:0 0 6px;font-size:16px">这张没传上去</h3><p style="margin:0;color:#6f6862">网络断了一下。照片还在手机里，要再试一次吗？</p></div><div class="row-btns" style="display:flex;border-top:1px solid #eee5dd"><button type="button" style="flex:1;min-height:46px;border:0;background:transparent;font:inherit;cursor:pointer">先不传</button><button type="button" style="flex:1;min-height:46px;border:0;border-left:1px solid #eee5dd;background:transparent;font:inherit;font-weight:700;color:var(--pk-brand);cursor:pointer">再试一次</button></div>';
+  const m = dropModal({ host: album, content: wrap, label: '上传失败', role: 'alertdialog', scrim: 0.4 });
+  const [no, yes] = wrap.querySelectorAll('button');
+  no.onclick = () => m.close();
+  yes.onclick = async () => { await m.close(); upload(); };
+  m.open();
+  albumStatus.textContent = '这张没传上去';
+}
+uploadBtn.addEventListener('click', upload);
+
+// ---------------------------------------------------------------------------
+// 滑动归档
+// ---------------------------------------------------------------------------
+const inbox = document.getElementById('inbox');
+const list = document.getElementById('list');
+const badge = document.getElementById('badge');
+const archivedIcon = document.getElementById('archived-icon');
+const inboxStatus = document.getElementById('inbox-status');
+const TH = 48; // 门槛：内容实际移开 48px（手指约拖 85px）
+let archived = 0;
+const MSGS = [
+  { who: '外婆', text: '周日来吃饭，做红烧肉', t: A.today, to: '发给全家' },
+  { who: '爸', text: '车下午送去保养了', t: A.weekday, to: '发给全家' },
+  { who: '姐', text: '快递放门口柜子里了', t: A.weekday, to: '只发给你' },
+  { who: '妈', text: '记得给阳台的花浇水', t: A.thisYear, to: '发给全家' },
+  { who: '乐', text: '周末去公园放风筝？', t: A.lastYear, to: '发给全家' },
+];
+function row(m) {
+  const li = document.createElement('li');
+  li.className = 'row';
+  li._msg = m;
+  // 规则 8：谁发的、发给谁、什么时候
+  li.innerHTML = `<div class="behind" aria-hidden="true">${I.archive}</div><div class="face"><span class="pk-avatar" style="--pk-avatar:${FAMILY[m.who]}">${esc(m.who)}</span><span class="txt"><b>${esc(m.text)}</b><small>${esc(m.who)} · ${when(m.t)} · ${m.to}</small></span><button type="button" class="arch" aria-label="归档：${esc(m.text)}">${I.archive}</button></div>`;
+  const face = li.querySelector('.face');
+  li.querySelector('.arch').addEventListener('click', () => archive(li, true));
+  // 跟手、带阻尼（规则 9）
+  let start = null;
+  let x = 0;
+  let armed = false;
+  li.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || e.target.closest('button')) return;
+    face.getAnimations().forEach((a) => a.cancel());
+    start = { x: e.clientX, y: e.clientY, id: e.pointerId, drag: false };
+  });
+  li.addEventListener('pointermove', (e) => {
+    if (!start || e.pointerId !== start.id) return;
+    const dx = e.clientX - start.x;
+    if (!start.drag) {
+      if (Math.abs(dx) < 6) return;
+      if (Math.abs(e.clientY - start.y) > Math.abs(dx)) { start = null; return; } // 竖着滑是滚动
+      start.drag = true;
+      li.setPointerCapture(e.pointerId);
+    }
+    x = Math.min(0, rubber(dx, { max: 140 }));
+    face.style.transform = `translateX(${x}px)`;
+    const over = -x >= TH;
+    if (over !== armed) {
+      armed = over;
+      li.classList.toggle('is-armed', over);
+      if (over) pop(li.querySelector('.behind svg'), { from: 1, peak: 0.3, fill: 'none' }); // 门槛看得见
+    }
+  });
+  const end = () => {
+    if (!start) return;
+    const wasDrag = start.drag;
+    start = null;
+    if (!wasDrag) return;
+    if (armed) { archive(li, false); return; }
+    // 没过门槛：弹回原处，冲过一点（规则 3）
+    const a = fly(face, { from: [x, 0], to: [0, 0], over: 4, back: 0, at: [0.6, 0.8], ms: 300, easing: motion.ease.out });
+    face.style.transform = '';
+    a.finished.then(() => a.cancel()).catch(() => {});
+    x = 0;
+  };
+  li.addEventListener('pointerup', end);
+  li.addEventListener('pointercancel', end);
+  return li;
+}
+MSGS.forEach((m) => list.appendChild(row(m)));
+
+async function archive(li, byKey) {
+  const m = li._msg;
+  const face = li.querySelector('.face');
+  // 替身从此刻的位置出发，飞向「已归档」（规则 1）
+  const g = ghostOf(face, inbox);
+  face.getAnimations().forEach((a) => a.cancel());
+  const undo = document.createElement('li');
+  undo.className = 'undo';
+  undo._msg = m;
+  undo.innerHTML = `<span>已归档「${esc(m.text)}」</span><button type="button">撤销</button>`;
+  slide([...list.children].filter((x) => x !== li), () => li.replaceWith(undo));
+  const btn = undo.querySelector('button');
+  btn.addEventListener('click', () => restore(undo));
+  if (byKey) btn.focus({ preventScroll: true }); // 用键盘归档的，焦点落到原地的「撤销」上
+  inboxStatus.textContent = `已归档：${m.text}`;
+  await flyTo(g, archivedIcon).finished;
+  g.remove();
+  setCount(archived + 1);
+  undo._timer = setTimeout(() => expire(undo), 5000);
+}
+async function restore(undo) {
+  clearTimeout(undo._timer);
+  const li = row(undo._msg);
+  // 撤销就倒着放：从「已归档」飞回原处（规则 2）
+  slide([...list.children].filter((x) => x !== undo), () => undo.replaceWith(li));
+  setCount(archived - 1);
+  li.querySelector('.arch').focus({ preventScroll: true });
+  const face = li.querySelector('.face');
+  face.style.visibility = 'hidden';
+  const g = ghostOf(face, inbox);
+  g.style.visibility = '';
+  await flyFrom(g, archivedIcon, { scale: [0.3, 1] }).finished;
+  face.style.visibility = '';
+  g.remove();
+  inboxStatus.textContent = `已放回：${undo._msg.text}`;
+}
+function expire(undo) {
+  if (!undo.isConnected) return;
+  const hadFocus = undo.contains(document.activeElement);
+  slide([...list.children].filter((x) => x !== undo), () => undo.remove());
+  const box = list.children.length ? null : showEmpty();
+  if (hadFocus) (list.querySelector('.arch, .undo button') || box)?.focus({ preventScroll: true });
+}
+function setCount(n) {
+  archived = n;
+  badge.hidden = n === 0;
+  badge.textContent = String(n);
+  if (n) pop(badge, { from: 1, peak: 0.3, fill: 'none' }); // 数字冒一下，只冒这一次（规则 6）
+}
+function showEmpty() {
+  // 没人注意的地方也做（规则 10）：压印的图案 + 一句人话
+  const box = document.createElement('div');
+  box.className = 'empty';
+  box.tabIndex = -1; // 最后一条「撤销」消失时焦点落在这里，不掉回页面开头
+  box.innerHTML = `<span class="pk-deboss">${I.done}</span><span>都看完了。新消息来了会排在这里。</span>`;
+  list.after(box);
+  fadeIn(box, { from: [0, 8] });
+  return box;
+}
+
+document.querySelectorAll('input[name=k]').forEach((r) => r.addEventListener('change', () => setIntensity(r.value)));
+</script>
+</body>
+</html>

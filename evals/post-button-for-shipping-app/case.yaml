@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: post-button-for-shipping-app
+expected_outcome: |
+  一个单文件 HTML 原型：底栏正中的加号点开后，5 个图标沿弧线弹出，冲过头再回弹落位并带自转，加号转成叉，背景压暗；选中一项有放大消散；Esc 和点空白能收回；照顾减少动效；不用 Path 的品牌素材；因为要上线，提醒加号放射菜单有 Path 的专利，建议法务评估。

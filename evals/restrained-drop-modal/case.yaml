@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: restrained-drop-modal
+expected_outcome: |
+  一个单文件 HTML：对话框从上方落下并左右轻晃后停稳，关闭时歪着加速摔出；幅度明显比 Path 原样克制；背景压暗；Esc 可关、焦点进出正确、有 dialog 语义；照顾减少动效。

@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: timeline-scroll-clock
+expected_outcome: |
+  一个单文件 HTML：滚动时右侧出现跟着滚动条位置走的时间标签，带会转到新时间的指针表盘，往后滚顺时针、往回滚逆时针；日期行当天不显示、一周内显示星期、今年显示月日、更早带年份；停止滚动约 1 秒后淡出。

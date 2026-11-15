@@ -1,0 +1,504 @@
+/* path-kit.css：Path 交互复刻的样式与取值。
+   颜色取自录屏和截图的像素（见 references/motion-spec.md「颜色」），标「目测」的没有取到像素。
+   两套皮肤：data-pk-skin="p4"（默认，2014–2016 扁平）和 "p2"（2011–2012 拟物）。
+   接进已有设计系统时，只覆盖下面这些变量，不改组件规则。 */
+
+:where([data-pk-skin]), :where(.pk-root) {
+  --pk-brand: #f33f12;          /* Path 4 顶栏，取色 */
+  --pk-brand-press: #d9330b;
+  --pk-on-brand: #fff;
+  --pk-desk: #e7e1da;           /* 桌面/外框衬底，浅纸外围衬托 */
+  --pk-paper: #f6f0eb;          /* Path 4 纸底，取色 */
+  --pk-wash: #eee7df;           /* 纸上的淡底：次级区块、选中行、输入底 */
+  --pk-card: #fff;
+  --pk-ink: #3a3633;
+  --pk-ink-2: #8f8780;
+  --pk-line: #e4dcd4;           /* 时间轴竖线（目测，比 p2 取色略深，扁平版需要看得见） */
+  --pk-rule: rgba(58, 54, 51, .1);
+  --pk-rule-strong: rgba(58, 54, 51, .18);
+  --pk-scrim: #000;
+  --pk-tag: rgba(18, 16, 15, .9);          /* 时钟标签底，近黑（测） */
+  --pk-react-bg: rgba(22, 20, 19, .94);    /* 回应浮层底，近黑（目测） */
+  --pk-on-tag: #fff;                       /* 标签、浮层上的字 */
+  --pk-on-tag-2: rgba(255, 255, 255, .62); /* 标签、浮层上的次要字：日期、「几位家人看过」 */
+  --pk-shadow-tag: 0 2px 8px rgba(0, 0, 0, .2);
+  --pk-shadow-pop: 0 6px 20px rgba(0, 0, 0, .3);
+  --pk-react-btn-bg: rgba(0, 0, 0, .06);
+  --pk-thumb: rgba(0, 0, 0, .35);
+  --pk-thumb-drag: rgba(0, 0, 0, .5);
+  --pk-face: #ffd23f;
+  --pk-love: #e8453c;
+  --pk-star: #f5b301;
+  --pk-star-off: #c9c2bb;
+  --pk-deboss: rgba(60, 40, 20, .16);
+  --pk-deboss-hi: rgba(255, 255, 255, .85);
+  --pk-relay-active: color-mix(in srgb, var(--pk-ink) 70%, transparent);
+  --pk-shadow-float: 0 12px 40px rgba(0, 0, 0, .35);
+  --pk-shadow-card: 0 1px 3px rgba(0, 0, 0, .08);
+  /* 类型色：发布菜单的字形、时间线上的小圆。取自 2016 录屏（motion-spec 7.2），人物是目测 */
+  --pk-type-photo: #383732;     /* 菜单里相机字形是近黑 */
+  --pk-type-place: #2574e1;
+  --pk-type-music: #fba03f;
+  --pk-type-thought: #63a33f;
+  --pk-type-sleep: #461a89;
+  --pk-type-people: #e5432d;    /* 目测 */
+  --pk-type-move: #756c60;      /* p2 飞机小圆，取色 */
+  /* 筛选色：搜索里的筛选块（彩底白字形的胶囊），取自 2016 录屏 */
+  --pk-filter-photo: #0ec2d8;
+  --pk-filter-place: #2170d1;
+  --pk-filter-date: #eb4e2a;
+  --pk-filter-spring: #69ab2b;
+  --pk-filter-summer: #fdd344;
+  --pk-filter-fall: #f17f23;
+  --pk-filter-winter: #99abb8;
+  --pk-filter-ink: #fff;        /* 筛选块上的字和字形；Path 原版一律白色 */
+  --pk-filter-summer-ink: #fff;
+  --pk-filter-winter-ink: #fff;
+  --pk-private: #0a71ce;        /* 唯一的状态色：私密 / 内圈（星标、锁），取色 */
+  --pk-bar-h: 56px;
+  --pk-bar-bg: var(--pk-brand);
+  --pk-radius: 10px;
+  --pk-radius-pop: 10px;        /* 回应浮层的圆角，两代都是 10 */
+  --pk-radius-btn: 8px;
+  --pk-radius-pill: 9999px;
+  --pk-modal-max: 340px;        /* 移动端确认框 340px；桌面表单弹窗可覆盖为 460px–520px */
+  --pk-toggle: 56px;            /* 加号直径 */
+  --pk-item: 44px;              /* 弹出图标直径，也是最小点击区 */
+  --pk-line-x: 68px;            /* 时间轴竖线离左边的距离 */
+}
+
+/* :where() 让这一组和上面、下面的深色同为 0 优先级，按先后覆盖：深色写在后面，p2 加深色时整组换成深色。
+   不包 :where() 的话，p2 的纸色和字色会压过深色，弹窗变成深底深字（实测对比度 1.78）。 */
+:where([data-pk-skin="p2"]) {
+  --pk-brand: #bb2e1c;          /* Path 2 顶栏，取色 */
+  --pk-brand-press: #a62215;    /* 顶栏下沿，取色 */
+  --pk-paper: #f3eee9;          /* 取色 */
+  --pk-wash: #eae3db;
+  --pk-line: #e2dcd5;           /* 取色 #ece8e4 偏浅，加深一档才看得见 */
+  --pk-ink: #474544;            /* 取色 */
+  --pk-type-music: #ee9920;     /* 取色 */
+  --pk-bar-bg:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgba(0,0,0,.04) 0 1px, transparent 1px 3px),
+    linear-gradient(#c43a27, #a62215);   /* 亚麻布纹，用渐变画，不用 Path 的贴图 */
+  --pk-radius: 6px;
+  --pk-radius-btn: 6px;
+}
+
+/* ---------- 加深的类型色（data-pk-contrast="more"） ----------
+   Path 原版的黄、青、橙、绿底配白字形，对比度只有 1.4–3.1。网页上要过 3:1（图形）和 4.5:1（字）时打开它：
+   保持 OKLCH 的色相和彩度，只降明度到白字 4.5:1；夏黄、冬灰蓝降明度会变脏，保留原色改深色字（motion-spec 7.2）。 */
+:where([data-pk-contrast="more"]) {
+  --pk-type-music: #ab6408;
+  --pk-type-thought: #45841b;
+  --pk-filter-photo: #128290;
+  --pk-filter-date: #d93c15;
+  --pk-filter-spring: #4a8402;
+  --pk-filter-fall: #b95c08;
+  --pk-filter-summer-ink: #4a3800;
+  --pk-filter-winter-ink: #1f2b34;
+}
+
+/* ---------- 深色主题（独立项目可用 data-pk-theme="dark"，或在 .dark 下自动生效） ----------
+   Path 没有深色模式：下面的值全是自定的，不是取色。两代皮肤共用这一组。
+   同一组值在下面的 @media（data-pk-theme="auto"）里又写了一遍，改的时候两处一起改。 */
+:where([data-pk-theme="dark"]), :where(.dark .pk-root), :where(.dark[data-pk-skin]) {
+  --pk-desk: #0d0c0b;
+  --pk-paper: #171513;
+  --pk-wash: #2a2521;
+  --pk-card: #1f1c19;
+  --pk-ink: #ece6df;
+  --pk-ink-2: #a0978e;
+  --pk-line: #2e2a26;
+  --pk-rule: rgba(255, 250, 245, .09);
+  --pk-rule-strong: rgba(255, 250, 245, .18);
+  --pk-tag: rgba(34, 30, 27, .96);
+  --pk-react-bg: rgba(34, 30, 27, .96);
+  --pk-react-btn-bg: rgba(255, 255, 255, .09);
+  --pk-thumb: rgba(255, 255, 255, .28);
+  --pk-thumb-drag: rgba(255, 255, 255, .48);
+  --pk-star-off: #58524c;
+  /* 深底压印：用更深的凹槽色配极淡的下沿微亮边 */
+  --pk-deboss: rgba(0, 0, 0, .52);
+  --pk-deboss-hi: rgba(255, 255, 255, .11);
+  --pk-relay-active: rgba(236, 230, 223, .78);
+  --pk-shadow-float: 0 0 0 1px rgba(255, 255, 255, .1), 0 16px 44px rgba(0, 0, 0, .68);
+  --pk-shadow-card: 0 0 0 1px rgba(255, 255, 255, .08);
+}
+
+@media (prefers-color-scheme: dark) {
+  /* 跟随系统：和上面那组完全一样，改的时候两处一起改 */
+  :where([data-pk-theme="auto"]) {
+    --pk-desk: #0d0c0b;
+    --pk-paper: #171513;
+    --pk-wash: #2a2521;
+    --pk-card: #1f1c19;
+    --pk-ink: #ece6df;
+    --pk-ink-2: #a0978e;
+    --pk-line: #2e2a26;
+    --pk-rule: rgba(255, 250, 245, .09);
+    --pk-rule-strong: rgba(255, 250, 245, .18);
+    --pk-tag: rgba(34, 30, 27, .96);
+    --pk-react-bg: rgba(34, 30, 27, .96);
+    --pk-react-btn-bg: rgba(255, 255, 255, .09);
+    --pk-thumb: rgba(255, 255, 255, .28);
+    --pk-thumb-drag: rgba(255, 255, 255, .48);
+    --pk-star-off: #58524c;
+    --pk-deboss: rgba(0, 0, 0, .52);
+    --pk-deboss-hi: rgba(255, 255, 255, .11);
+    --pk-relay-active: rgba(236, 230, 223, .78);
+    --pk-shadow-float: 0 0 0 1px rgba(255, 255, 255, .1), 0 16px 44px rgba(0, 0, 0, .68);
+    --pk-shadow-card: 0 0 0 1px rgba(255, 255, 255, .08);
+  }
+}
+
+/* ---------- 公用 ---------- */
+.pk-scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--pk-scrim);
+  opacity: 0;
+  z-index: 60;
+}
+
+/* ---------- 1. 发布按钮 ---------- */
+.pk-menu {
+  position: relative;
+  width: var(--pk-toggle);
+  height: var(--pk-toggle);
+}
+.pk-menu.is-open { z-index: 70; }
+.pk-menu-toggle {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: var(--pk-brand);
+  color: var(--pk-on-brand);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .25), inset 0 0 0 3px rgba(255, 255, 255, .9);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.pk-menu-toggle:active { background: var(--pk-brand-press); }
+.pk-menu-toggle:focus-visible { outline: 3px solid color-mix(in srgb, var(--pk-brand) 40%, white); outline-offset: 3px; }
+.pk-plus { position: relative; width: 22px; height: 22px; display: block; }
+.pk-plus::before, .pk-plus::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 22px;
+  height: 3.5px;
+  margin: -1.75px 0 0 -11px;
+  border-radius: 2px;
+  background: currentColor;
+}
+.pk-plus::after { transform: rotate(90deg); }
+.pk-menu-items { position: absolute; inset: 0; z-index: 1; }
+.pk-menu-item {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--pk-item);
+  height: var(--pk-item);
+  margin: calc(var(--pk-item) / -2) 0 0 calc(var(--pk-item) / -2);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--pk-item-color, var(--pk-ink));
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .3);
+  cursor: pointer;
+}
+.pk-menu-item[hidden] { display: none; }
+.pk-menu-item svg { width: 22px; height: 22px; }
+.pk-menu-item:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+/* Path 2：图标是实心彩色圆 */
+[data-pk-skin="p2"] .pk-menu-item { background: var(--pk-item-color, var(--pk-ink)); color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35), inset 0 0 0 2px rgba(255,255,255,.85); }
+
+/* ---------- 2. 滚动时钟 ---------- */
+.pk-clock {
+  position: absolute;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 12px 0 5px;
+  border-radius: 15px 4px 4px 15px;
+  background: var(--pk-tag);
+  color: var(--pk-on-tag);
+  pointer-events: none;
+  box-shadow: var(--pk-shadow-tag);
+  white-space: nowrap;
+}
+.pk-clock.has-date { height: 36px; border-radius: 18px 4px 4px 18px; }
+.pk-clock::after { /* 指向滚动条的尖 */
+  content: "";
+  position: absolute;
+  right: -7px;
+  top: 50%;
+  margin-top: -8px;
+  border: 8px solid transparent;
+  border-right: 0;
+  border-left: 7px solid var(--pk-tag);
+}
+.pk-clock-face {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, .15);
+}
+.pk-clock-face i {
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--pk-love);
+  transform-origin: 50% 100%;
+}
+.pk-clock-h { height: 6px; }
+.pk-clock-m { height: 8.5px; }
+.pk-clock-face::after { content: ""; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px 0 0 -2px; border-radius: 50%; background: var(--pk-love); }
+.pk-clock-text { display: grid; line-height: 1.15; }
+.pk-clock-time { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pk-clock-date { font-size: 11px; color: var(--pk-on-tag-2); }
+.pk-clock:not(.has-date) .pk-clock-date { display: none; }
+.pk-clock-thumb {
+  position: absolute;
+  z-index: 29;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--pk-thumb);
+  cursor: grab;
+  touch-action: none;
+}
+.pk-clock-thumb::before { content: ""; position: absolute; inset: -2px -7px; } /* 看着 3px，能抓的有 17px 宽 */
+.pk-clock-thumb.is-dragging { cursor: grabbing; width: 5px; margin-right: -1px; background: var(--pk-thumb-drag); }
+.pk-clock-thumb[hidden] { display: none; }
+/* timeScroller 用自画滑块时给滚动元素加上这个类，藏起原生滚动条；thumb: false 时不加 */
+.pk-scroll-hidebar { scrollbar-width: none; }
+.pk-scroll-hidebar::-webkit-scrollbar { display: none; }
+
+/* ---------- 3. 情绪回应 ---------- */
+.pk-react {
+  position: absolute;
+  z-index: 80;
+  padding: 8px;
+  border-radius: var(--pk-radius-pop);
+  background: var(--pk-react-bg);
+  color: var(--pk-on-tag);
+  box-shadow: var(--pk-shadow-pop);
+  transform-origin: 100% var(--pk-tip-y, 18px); /* 从尖角那里放大出来 */
+}
+.pk-react[data-side="below"] { transform-origin: var(--pk-tip-x, 85%) 0; }
+.pk-react::after { /* 尖角，位置由 reactionPicker 按按钮中心算 */
+  content: "";
+  position: absolute;
+  right: -7px;
+  top: calc(var(--pk-tip-y, 19px) - 7px);
+  border: 7px solid transparent;
+  border-right: 0;
+  border-left: 7px solid var(--pk-react-bg);
+}
+.pk-react[data-side="below"]::after { right: auto; left: calc(var(--pk-tip-x, 85%) - 7px); top: -7px; border: 7px solid transparent; border-top: 0; border-bottom: 7px solid var(--pk-react-bg); }
+.pk-react-faces { display: flex; gap: 4px; }
+.pk-react-face {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+.pk-react-face svg { width: 36px; height: 36px; }
+.pk-react-face:focus-visible { outline: 2px solid var(--pk-on-tag); outline-offset: -2px; }
+.pk-react-seen { display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 6px; font-size: 12px; color: var(--pk-on-tag-2); }
+.pk-react-seen svg { width: 12px; height: 12px; }
+
+/* ---------- 4. 掉落弹窗 ---------- */
+.pk-drop {
+  position: absolute;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  pointer-events: none;
+}
+.pk-drop-fall { width: min(100%, var(--pk-modal-max, 340px)); pointer-events: auto; }
+.pk-drop-card {
+  border-radius: var(--pk-radius);
+  background: var(--pk-card);
+  color: var(--pk-ink);
+  box-shadow: var(--pk-shadow-float);
+  overflow: hidden;
+  outline: none;
+}
+.pk-drop-scrim { z-index: 89; }
+.pk-pager { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.pk-pager::-webkit-scrollbar { display: none; }
+.pk-pager > * { flex: 0 0 100%; scroll-snap-align: start; }
+.pk-dots { display: flex; justify-content: center; gap: 6px; padding: 10px 0 14px; }
+.pk-dots i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .3; transition: opacity .2s; }
+.pk-dots i.is-on { opacity: .9; }
+
+/* ---------- 5. 封面头部与时间线 ---------- */
+.pk-cover {
+  --pk-cover-h: 220px;
+  position: sticky;
+  top: calc(var(--pk-strip, var(--pk-bar-h)) - var(--pk-cover-h));
+  z-index: 5;
+  height: var(--pk-cover-h);
+  overflow: hidden;
+  color: #fff;
+}
+.pk-cover-img { position: absolute; inset: -40px 0 0; background-size: cover; background-position: center; transform-origin: 50% 0; will-change: transform; }
+.pk-cover-shade { position: absolute; inset: 0; background: linear-gradient(transparent 45%, rgba(0, 0, 0, .35)); }
+.pk-cover-compact { position: absolute; left: 0; right: 0; bottom: 0; height: var(--pk-strip, var(--pk-bar-h)); display: grid; place-items: center; font-weight: 700; opacity: 0; }
+.pk-avatar {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--pk-avatar, #c9b8a6);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 0 0 3px #fff, 0 2px 6px rgba(0, 0, 0, .3);
+}
+.pk-context { font-size: 13px; line-height: 1.35; text-shadow: 0 1px 2px rgba(0, 0, 0, .4); }
+.pk-context b { display: block; font-size: 15px; }
+
+.pk-timeline { position: relative; padding: 4px 0 0; }
+.pk-timeline::before {
+  content: "";
+  position: absolute;
+  left: calc(var(--pk-line-x) - 1px);
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--pk-line);
+}
+.pk-moment {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--pk-line-x) 1fr auto;
+  align-items: start;
+  gap: 0;
+  padding: 10px 12px 10px 0;
+}
+.pk-moment-who { justify-self: start; margin: 2px 0 0 12px; width: 34px; height: 34px; border-radius: 6px; font-size: 13px; box-shadow: none; }
+.pk-moment-type {
+  position: absolute;
+  left: calc(var(--pk-line-x) - 12px);
+  top: 15px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--pk-type, var(--pk-type-move));
+  color: #fff;
+  box-shadow: 0 0 0 3px var(--pk-paper);
+}
+.pk-moment-type svg { width: 14px; height: 14px; }
+
+/* 筛选块：纸上的彩底白字形胶囊（规则 12）。常驻筛选条可以用 aria-pressed="false" 让没选中的变成描边（推出来的做法）。颜色用变量给：
+   style="--pk-chip: var(--pk-filter-summer); --pk-chip-ink: var(--pk-filter-summer-ink)"，不给 ink 就用 --pk-filter-ink */
+.pk-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 12px 0 9px;
+  border: 0;
+  border-radius: var(--pk-radius-pill, 9999px);
+  background: var(--pk-chip, var(--pk-ink-2));
+  color: var(--pk-chip-ink, var(--pk-filter-ink));
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pk-chip svg { width: 16px; height: 16px; flex: none; }
+button.pk-chip { cursor: pointer; }
+button.pk-chip::before { content: ""; position: absolute; inset: -7px 0; } /* 看着 30px 高，点击区 44px */
+.pk-chip[aria-pressed="false"] { background: transparent; color: var(--pk-ink-2); box-shadow: inset 0 0 0 1.5px var(--pk-rule-strong); }
+/* 只有私密 / 内圈上色（规则 11）：锁、星标、「只给自己」 */
+.pk-private { color: var(--pk-private); }
+
+.pk-moment-body { padding-left: 22px; font-size: 14px; line-height: 1.45; color: var(--pk-ink); }
+.pk-moment-body small { display: block; font-size: 12px; color: var(--pk-ink-2); }
+.pk-moment-photo { margin-top: 8px; height: 150px; border-radius: 4px; background: var(--pk-photo, #ccc); box-shadow: 0 1px 2px rgba(0, 0, 0, .15); }
+.pk-moment-react {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--pk-ink-2);
+  cursor: pointer;
+}
+.pk-moment-react span { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: var(--pk-react-btn-bg); }
+.pk-moment-react svg { width: 18px; height: 18px; }
+.pk-reacts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pk-reacts > span { position: relative; width: 28px; height: 28px; border-radius: 6px; background: var(--pk-avatar, #c9b8a6); }
+.pk-reacts > span svg { position: absolute; right: -5px; bottom: -5px; width: 16px; height: 16px; }
+
+/* 压印：颜色只比纸深一点，下沿一道白色高光，像压进纸里。空状态、列表到底、离线提示的图标都可以用 */
+.pk-deboss { color: var(--pk-deboss); filter: drop-shadow(0 1px 0 var(--pk-deboss-hi)); }
+
+/* 信息流尽头：压在纸上的小装饰 */
+.pk-feed-end { display: grid; place-items: center; padding: 28px 0 40px; color: var(--pk-deboss); }
+.pk-feed-end svg { width: 54px; height: 18px; filter: drop-shadow(0 1px 0 var(--pk-deboss-hi)); }
+
+/* ---------- 6. 下拉刷新 ---------- */
+.pk-pull-head { position: absolute; left: calc(var(--pk-line-x) - 8px); top: 0; width: 16px; height: 0; z-index: 3; pointer-events: none; }
+.pk-pull-drop { position: absolute; left: 0; overflow: visible; }
+.pk-pull-drop path { fill: var(--pk-line); stroke: color-mix(in srgb, var(--pk-line) 70%, #000); stroke-width: .6; }
+.pk-pull-dot { position: absolute; left: 3px; top: -5px; width: 10px; height: 10px; border-radius: 50%; background: var(--pk-brand); opacity: 0; }
+.pk-pull-head.is-armed .pk-pull-dot { opacity: 1; }
+.pk-pull-head.is-loading .pk-pull-dot { animation: pk-pulse .9s ease-in-out infinite; }
+@keyframes pk-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(.6); opacity: .55; } }
+
+/* ---------- 7. 星标 ---------- */
+.pk-star-btn { width: 44px; height: 44px; display: grid; place-items: center; padding: 0; border: 0; background: transparent; color: var(--pk-star-off); cursor: pointer; }
+.pk-star-btn[aria-pressed="true"] { color: var(--pk-star); }
+.pk-star { width: 22px; height: 22px; display: block; }
+
+/* ---------- 8. 压印加载 ---------- */
+.pk-relay { display: flex; justify-content: center; gap: 18px; color: var(--pk-deboss); }
+.pk-relay > * {
+  display: grid;
+  filter: drop-shadow(0 1px 0 var(--pk-deboss-hi));
+  animation: pk-relay calc(var(--pk-relay-n, 5) * var(--pk-relay-step, 170ms)) linear infinite;
+  animation-delay: calc(var(--pk-relay-i, 0) * var(--pk-relay-step, 170ms));
+}
+.pk-relay svg { width: 22px; height: 22px; }
+/* 一圈里亮一格：5 个图标时每个亮 20% 的时间 */
+@keyframes pk-relay {
+  0% { color: var(--pk-deboss); }
+  3%, 18% { color: var(--pk-relay-active); }
+  22%, 100% { color: var(--pk-deboss); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pk-relay > * { animation: none; }
+  .pk-pull-head.is-loading .pk-pull-dot { animation-duration: 2s; }
+}
