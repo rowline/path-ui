@@ -37,8 +37,8 @@
   .tile { position: relative; margin: 0; aspect-ratio: 1; border-radius: 6px; background: var(--photo); overflow: hidden; }
   .tile small { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 6px 4px; font-size: 11px; line-height: 1.3; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.45)); transform-origin: 0 100%; }
   /* 上传是这一页最重要的动作，只有它用品牌色（规则 4） */
-  .upload { min-width: 168px; min-height: 44px; padding: 0 22px; border: 0; border-radius: 22px; background: var(--pk-brand); color: #fff; font: inherit; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
-  .upload[aria-disabled="true"] { cursor: default; background: var(--pk-paper); box-shadow: inset 0 0 0 1px rgba(60,40,20,.14); }
+  .upload { min-width: 168px; min-height: 44px; padding: 0 22px; border: 0; border-radius: 22px; background: var(--pk-brand); color: #fff; font: inherit; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
+  .upload[aria-disabled="true"] { cursor: default; background: var(--pk-paper); color: var(--pk-ink-2); box-shadow: inset 0 0 0 1px rgba(60,40,20,.14); }
   .upload .pk-relay { gap: 14px; }
   .upload .pk-relay svg { width: 20px; height: 20px; }
   .ghost { position: absolute; z-index: 30; pointer-events: none; margin: 0; }
@@ -215,16 +215,20 @@ async function upload() {
   if (busy) return;
   busy = true;
   // 就地：按钮自己变成「正在传」，不另开进度弹窗（规则 7）；等待用压印图标，不用转圈（规则 10）
+  // 「正在处理」放在按钮自己身上（规则 14）：先换成一句进行中的话，压印图标晚 400ms 才出来，传得快就不闪
   uploadBtn.setAttribute('aria-disabled', 'true');
-  uploadLabel.hidden = true;
+  uploadBtn.setAttribute('aria-busy', 'true');
+  uploadLabel.textContent = '正在上传…';
   const loader = document.createElement('span');
   uploadBtn.appendChild(loader);
-  relayLoader(loader, [I.photo, I.people, I.place]);
+  const relay = relayLoader(loader, [I.photo, I.people, I.place]);
   loader.setAttribute('aria-label', '正在上传');
   albumStatus.textContent = '正在上传';
   await wait(1600);
+  await relay.stop();
   loader.remove();
-  uploadLabel.hidden = false;
+  uploadLabel.textContent = '上传照片';
+  uploadBtn.removeAttribute('aria-busy');
   uploadBtn.removeAttribute('aria-disabled');
   busy = false;
   const fail = document.getElementById('fail-next');

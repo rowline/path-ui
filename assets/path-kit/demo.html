@@ -323,8 +323,9 @@ document.getElementById('btn-loader').onclick = () => {
   const el = document.createElement('div');
   el.className = 'loader-row';
   slot.appendChild(el);
-  relayLoader(el, [I.photo, I.place, I.music, I.thought, I.sleep]); // 压印加载用的也是类型字形
-  setTimeout(() => el.remove(), 3000);
+  // 压印加载用的也是类型字形；晚 400ms 才露面，等完了用 stop() 收（露面了至少留 500ms）
+  const loader = relayLoader(el, [I.photo, I.place, I.music, I.thought, I.sleep]);
+  setTimeout(() => loader.stop().then(() => el.remove()), 3000);
 };
 
 // 时代、强度

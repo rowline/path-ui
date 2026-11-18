@@ -498,7 +498,31 @@ button.pk-chip::before { content: ""; position: absolute; inset: -7px 0; } /* �
   22%, 100% { color: var(--pk-deboss); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .pk-relay > * { animation: none; }
-  .pk-pull-head.is-loading .pk-pull-dot { animation-duration: 2s; }
+/* 晚一点再露面：等待很短时不闪（relayLoader 的 delay） */
+.pk-relay-wait { visibility: hidden; }
+
+/* ---------- 9. 控件状态（规则 14） ----------
+   按下立刻有反应（60ms 压下去），松手弹回（200ms）；执行在松手时（原生 click），按下后拖出去再松手就不执行。
+   只做按下，不做悬停：触屏没有悬停，重要的东西也不能藏在悬停里。
+   被 kit 动画驱动的元素（菜单图标、表情）压的是里面的图形，不碰它们自己的 transform。 */
+.pk-menu-toggle, .pk-chip, .pk-star-btn, .pk-moment-react span, .pk-react-face svg, .pk-menu-item svg {
+  transition: transform 200ms cubic-bezier(.2, .9, .3, 1), opacity 200ms linear;
 }
+.pk-menu-toggle:active { transform: scale(.94); transition-duration: 60ms; }
+.pk-chip:active { transform: scale(.96); transition-duration: 60ms; }
+.pk-star-btn:active { transform: scale(.9); transition-duration: 60ms; }
+.pk-moment-react:active span, .pk-react-face:active svg, .pk-menu-item:active svg { transform: scale(.88); transition-duration: 60ms; }
+/* 键盘焦点一定看得见 */
+.pk-chip:focus-visible, .pk-star-btn:focus-visible, .pk-moment-react:focus-visible { outline: 2px solid var(--pk-ink); outline-offset: 2px; }
+/* 不能用的照样看得见，变淡、点不动；为什么不能用写在旁边（规则 14） */
+.pk-chip:disabled, .pk-chip[aria-disabled="true"], .pk-star-btn:disabled, .pk-star-btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
+[aria-busy="true"] { cursor: progress; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* 等待指示照样轮流变深（颜色变化不是移动，等待指示不能停）；只把下拉刷新那个点的缩放换成明暗 */
+  .pk-pull-head.is-loading .pk-pull-dot { animation-name: pk-pulse-fade; }
+  /* 按下不缩放，换成变淡 */
+  .pk-menu-toggle:active, .pk-chip:active, .pk-star-btn:active { transform: none; opacity: .7; }
+  .pk-moment-react:active span, .pk-react-face:active svg, .pk-menu-item:active svg { transform: none; opacity: .6; }
+}
+@keyframes pk-pulse-fade { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }

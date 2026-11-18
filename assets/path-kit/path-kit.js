@@ -42,7 +42,8 @@ export const motion = {
   reaction: { inMs: 200, fromScale: 0.92, faceMs: 250, faceStaggerMs: 30, overshoot: 0.15, outMs: 150 }, // [测] 200ms 淡入；其余 [估]
   modal: { inMs: 360, outMs: 300, scrim: 0.72, scrimMs: 250, swing: [-4, 3, -1, 0], fallTilt: 8 }, // [测]
   star: { onMs: 320, offMs: 220, overshoot: 0.35 }, // [估]
-  loader: { stepMs: 170 }, // [测]
+  // stepMs [测]；delay / minMs 借自 apple-design 的经验值：等待通常很短时，晚 400ms 再出现，免得一闪而过；出现了至少留 500ms
+  loader: { stepMs: 170, delay: 400, minMs: 500 },
   cover: { parallax: 0.5, fadeEnd: 0.6, compactFrom: 0.7 }, // [估]
   pull: { resistance: 0.8, threshold: 64, max: 150, backMs: 300 }, // [估] 手指拖约 150px 过阈值
 };
@@ -59,6 +60,10 @@ let intensity = 1;
  */
 export function setIntensity(k) { intensity = Math.max(0, Math.min(1, Number(k) || 0)); }
 export function getIntensity() { return reduced() ? 0 : intensity; }
+/**
+ * 系统开了「减少动态效果」时，零件不再移动、缩放、转动，换成短的淡入淡出（替换，不是删掉）：
+ * 东西照样出现、消失、状态照样变，只是不在屏幕上跑。时长压到 120ms 以内。规则 14 和 motion-spec 第 6 节。
+ */
 function reduced() {
   return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
@@ -99,20 +104,32 @@ function shiftOf(el) {
 // ---------------------------------------------------------------------------
 // 0. 零件：下面的组件都由这几种动作拼成，Path 没有的东西也用它们拼。
 //    该用哪一种，见 references/essence.md 的「规则」和「动作分五级」。
-//    幅度参数（over、back、windup、spin、peak、dip、swing、tilt）自动乘强度；遇到「减少动效」时长压到 120ms 以内。
+//    幅度参数（over、back、windup、spin、peak、dip、swing、tilt）自动乘强度。
+//    遇到「减少动效」：不移动、不缩放、不转，换成 120ms 以内的淡入淡出，或者直接到位。
 //    都返回 Animation（掉落和摔出返回位移那一段），要等它结束就 await anim.finished。
 // ---------------------------------------------------------------------------
 /**
  * 沿直线飞。from、to 是相对元素自身位置的偏移（px），[0, 0] 就是它本来该在的地方。
  * 路上可以先往反方向退一下（windup，在 windupAt 时刻），冲过终点（over，在 at[0]）再回落（back，在 at[1]），
  * 边飞边转（spin 度 × spinAt 曲线；rotFrom 是起始角，线性归零）。发布菜单的图标就是它。
+ * reduced：减少动效时怎么替换。'in' 在终点淡入，'out' 在起点淡出，'snap' 直接到终点；
+ * 不给就看 fade：越来越亮算 'in'，越来越暗算 'out'，没有 fade 算 'snap'。
  */
 export function fly(el, opts = {}) {
   const o = {
     from: [0, 0], to: [0, 0], over: 0, back: 0, at: [0.5, 0.7], windup: 0, windupAt: 0.75,
-    spin: 0, spinAt: [[0, 1], [1, 0]], rotFrom: 0, scale: [1, 1], fade: null,
+    spin: 0, spinAt: [[0, 1], [1, 0]], rotFrom: 0, scale: [1, 1], fade: null, reduced: null,
     ms: 300, delay: 0, easing: 'linear', fill: 'both', ...opts,
   };
+  if (reduced()) {
+    const f = o.fade;
+    const mode = o.reduced ?? (f ? (f[0][1] < f[f.length - 1][1] ? 'in' : 'out') : 'snap');
+    const [x, y] = mode === 'out' ? o.from : o.to;
+    const tf = { transform: `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) rotate(0deg) scale(${mode === 'out' ? o.scale[0] : o.scale[1]})` };
+    const ops = { in: [0, 1], out: [1, 0] }[mode];
+    const kf = ops ? [{ ...tf, opacity: ops[0] }, { ...tf, opacity: ops[1] }] : [tf, tf];
+    return el.animate(kf, { duration: ops ? dur(o.ms) : 0, delay: dur(o.delay), easing: 'linear', fill: o.fill });
+  }
   const k = getIntensity();
   const [fx, fy] = o.from;
   const dx = o.to[0] - fx;
@@ -159,7 +176,8 @@ export function flyTo(el, target, opts = {}) {
 export function growFrom(el, anchor, opts = {}) {
   const o = { fromScale: 0.92, ms: 200, delay: 0, easing: motion.ease.out, ...opts };
   if (anchor) aimAt(el, anchor);
-  return el.animate([{ opacity: 0, transform: `scale(${o.fromScale})` }, { opacity: 1, transform: 'scale(1)' }], { duration: dur(o.ms), delay: dur(o.delay), easing: o.easing, fill: 'both' });
+  const s0 = reduced() ? 1 : o.fromScale; // 减少动效：只淡入，不放大
+  return el.animate([{ opacity: 0, transform: `scale(${s0})` }, { opacity: 1, transform: 'scale(1)' }], { duration: dur(o.ms), delay: dur(o.delay), easing: o.easing, fill: 'both' });
 }
 
 /** 收回去：从此刻的样子接着淡出、缩小（打开到一半就关也不跳）。anchor 同 growFrom，已经对准过就不用再传。 */
@@ -169,7 +187,8 @@ export function shrinkTo(el, anchor, opts = {}) {
   const cs = getComputedStyle(el);
   const from = { opacity: cs.opacity, transform: cs.transform === 'none' ? 'scale(1)' : cs.transform };
   cancelAll(el);
-  return el.animate([from, { opacity: 0, transform: `scale(${o.toScale})` }], { duration: dur(o.ms), easing: o.easing, fill: 'forwards' });
+  const to = reduced() ? from.transform : `scale(${o.toScale})`; // 减少动效：只淡出，不缩小
+  return el.animate([from, { opacity: 0, transform: to }], { duration: dur(o.ms), easing: o.easing, fill: 'forwards' });
 }
 function aimAt(el, anchor) {
   const r = el.getBoundingClientRect();
@@ -184,6 +203,14 @@ function aimAt(el, anchor) {
 export function pop(el, opts = {}) {
   const o = { from: 0, peak: 0.2, dip: 0, at: null, ms: 250, delay: 0, easing: motion.ease.out, fill: 'both', ...opts };
   const fade = opts.fade ?? o.from === 0;
+  if (reduced()) {
+    // 减少动效：鼓一下换成亮度闪一下；从无到有换成淡入；其余直接到位。状态反馈留着，只是不缩放
+    const kf = o.from >= 1 ? [{ opacity: 1 }, { opacity: 0.55, offset: 0.35 }, { opacity: 1 }]
+      : fade ? [{ opacity: 0, transform: 'scale(1)' }, { opacity: 1, transform: 'scale(1)' }]
+        : [{ transform: 'scale(1)' }, { transform: 'scale(1)' }];
+    const still = o.from < 1 && !fade;
+    return el.animate(kf, { duration: still ? 0 : dur(o.ms), delay: dur(o.delay), easing: 'linear', fill: o.fill });
+  }
   const k = getIntensity();
   const at = o.at ?? (o.from >= 1 ? 0.35 : o.dip ? 0.45 : 0.6);
   const pts = [[0, o.from], [at, 1 + o.peak * k]];
@@ -200,7 +227,7 @@ export function fadeIn(el, opts = {}) {
   const op = parseFloat(getComputedStyle(el).opacity);
   cancelAll(el);
   const [x, y] = o.from;
-  const slide = (x || y) && op < 0.05;
+  const slide = (x || y) && op < 0.05 && !reduced(); // 减少动效：不滑，只淡入
   return el.animate(
     [{ opacity: op, ...(slide ? { transform: `translate(${x}px, ${y}px)` } : {}) }, { opacity: 1, ...(slide ? { transform: 'translate(0px, 0px)' } : {}) }],
     { duration: dur(o.ms), delay: dur(o.delay), easing: o.easing, fill: o.fill },
@@ -226,7 +253,11 @@ export function dropIn(el, opts = {}) {
   const h = o.height ?? el.getBoundingClientRect().bottom + 8;
   cancelAll(el);
   if (o.inner) cancelAll(o.inner);
-  const fall = el.animate([{ transform: `translateY(${-h}px)` }, { transform: 'translateY(0)' }], { duration: dur(o.ms), easing: motion.ease.land, fill: 'both' });
+  if (reduced()) {
+    // 减少动效：不从上面掉、不晃，在原处淡入
+    return el.animate([{ opacity: 0, transform: 'translateY(0)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: dur(o.ms), easing: 'linear', fill: 'both' });
+  }
+  const fall =el.animate([{ transform: `translateY(${-h}px)` }, { transform: 'translateY(0)' }], { duration: dur(o.ms), easing: motion.ease.land, fill: 'both' });
   const [r0, r1, r2, r3] = o.swing.map((d) => d * k);
   (o.inner || el).animate(
     [{ transform: `rotate(${r0}deg)`, offset: 0 }, { transform: `rotate(${r0}deg)`, offset: 0.25 }, { transform: `rotate(${r1}deg)`, offset: 0.55 }, { transform: `rotate(${r2}deg)`, offset: 0.8 }, { transform: `rotate(${r3}deg)`, offset: 1 }],
@@ -241,6 +272,14 @@ export function fallOut(el, opts = {}) {
   const k = getIntensity();
   const h = o.height ?? innerHeight - el.getBoundingClientRect().top + 8;
   const tilt = o.tilt * k;
+  if (reduced()) {
+    // 减少动效：不摔、不歪，从此刻的样子原地淡出
+    const cur = getComputedStyle(el);
+    const pose = cur.transform === 'none' ? 'translateY(0)' : cur.transform;
+    cancelAll(el);
+    if (o.inner) cancelAll(o.inner);
+    return el.animate([{ opacity: cur.opacity, transform: pose }, { opacity: 0, transform: pose }], { duration: dur(o.ms), easing: 'linear', fill: 'forwards' });
+  }
   if (o.inner) {
     const cur = getComputedStyle(o.inner).transform;
     const curFall = getComputedStyle(el).transform;
@@ -259,8 +298,8 @@ export function turnTo(el, deg, opts = {}) {
   const o = { from: null, ms: 300, delay: 0, easing: motion.ease.inOut, fill: 'both', ...opts };
   const cur = o.from == null ? getComputedStyle(el).transform : `rotate(${o.from}deg)`;
   cancelAll(el);
-  // fill: 'both'：带延迟时，等待期间也停在「此刻」的角度，不会先跳回去
-  return el.animate([{ transform: cur === 'none' ? 'rotate(0deg)' : cur }, { transform: `rotate(${deg}deg)` }], { duration: dur(o.ms), delay: dur(o.delay), easing: o.easing, fill: o.fill });
+  // fill: 'both'：带延迟时，等待期间也停在「此刻」的角度，不会先跳回去。减少动效：不转，直接到这个角度
+  return el.animate([{ transform: cur === 'none' ? 'rotate(0deg)' : cur }, { transform: `rotate(${deg}deg)` }], { duration: reduced() ? 0 : dur(o.ms), delay: dur(o.delay), easing: o.easing, fill: o.fill });
 }
 
 /** 阻尼：手指拖了 d px，东西实际走多远。越拖越沉，最多走到 max。下拉刷新、滑动归档都用它。 */
@@ -385,7 +424,7 @@ export function radialMenu(root, opts = {}) {
       cancelAll(el);
       return fly(el, {
         from: [0, 0], to: at(angles[i], R), over: cfg.far, back: -cfg.near, at: cfg.openAt, spin: cfg.spin, spinAt: cfg.spinAt,
-        ms: cfg.openMs, delay: i * cfg.staggerMs, easing: cfg.easing,
+        ms: cfg.openMs, delay: i * cfg.staggerMs, easing: cfg.easing, reduced: 'in', // 减少动效：在落点淡入
       });
     });
     itemEls[0]?.focus({ preventScroll: true });
@@ -410,17 +449,18 @@ export function radialMenu(root, opts = {}) {
       if (picked >= 0) {
         const chosen = i === picked;
         const grow = 1 + (cfg.pickScale - 1) * k;
+        const rest = reduced() ? 1 : cfg.restScale; // 减少动效：其余图标只淡掉，不缩
         // 起点写成和终点同样的 translate/rotate/scale：缩到 0 的矩阵拆不开，用 matrix() 当起点会在一半时硬跳
         const from = `translate(${now.x.toFixed(2)}px, ${now.y.toFixed(2)}px) rotate(${now.rot.toFixed(1)}deg) scale(1)`;
         return el.animate(
-          [{ transform: from, opacity: 1 }, { transform: tf(angles[i], R, 0, chosen ? grow : cfg.restScale), opacity: 0 }],
+          [{ transform: from, opacity: 1 }, { transform: tf(angles[i], R, 0, chosen ? grow : rest), opacity: 0 }],
           { duration: dur(chosen ? cfg.pickMs : cfg.restMs), easing: motion.ease.out, fill: 'forwards' },
         );
       }
       const order = n - 1 - i; // 收回时倒着来
       return fly(el, {
         from: [now.x, now.y], to: [0, 0], rotFrom: now.rot, windup: cfg.closeFar, windupAt: cfg.closeAt, spin: cfg.closeSpin, spinAt: cfg.closeSpinAt,
-        ms: cfg.closeMs, delay: order * cfg.staggerMs, easing: cfg.easing,
+        ms: cfg.closeMs, delay: order * cfg.staggerMs, easing: cfg.easing, reduced: 'out', // 减少动效：原地淡出
       });
     });
     await finished(anims);
@@ -1133,7 +1173,15 @@ export function popToggle(btn, opts = {}) {
 // ---------------------------------------------------------------------------
 // 8. 压印加载：一排浅浅压在纸上的类型图标，轮流变深
 // ---------------------------------------------------------------------------
-export function relayLoader(el, glyphs = []) {
+/**
+ * @param {HTMLElement} el 放图标的容器
+ * @param {string[]} glyphs 图标 SVG（用类型字形，规则 10、13）
+ * @param {object} opts delay：晚多久才出现（默认 400ms，等待很短时就不闪）；minMs：出现以后至少留多久（默认 500ms）
+ * @returns {{ stop(): Promise<void>, destroy(): void }} 等完了调 stop()：已经露面的会留够 minMs 再收，没露面的直接收
+ * 减少动效时照样轮流变深：这是颜色变化，不是移动；等待指示不能停（规则 10）。
+ */
+export function relayLoader(el, glyphs = [], opts = {}) {
+  const o = { delay: motion.loader.delay, minMs: motion.loader.minMs, ...opts };
   el.classList.add('pk-relay');
   el.setAttribute('role', 'status');
   if (!el.getAttribute('aria-label')) el.setAttribute('aria-label', '正在加载');
@@ -1142,5 +1190,17 @@ export function relayLoader(el, glyphs = []) {
   el.style.setProperty('--pk-relay-n', String(kids.length));
   el.style.setProperty('--pk-relay-step', `${motion.loader.stepMs}ms`);
   kids.forEach((c, i) => c.style.setProperty('--pk-relay-i', String(i)));
-  return { destroy() { el.classList.remove('pk-relay'); } };
+  let shownAt = 0;
+  let timer = 0;
+  const show = () => { el.classList.remove('pk-relay-wait'); shownAt = performance.now(); };
+  if (o.delay > 0) { el.classList.add('pk-relay-wait'); timer = setTimeout(show, o.delay); } else show();
+  const teardown = () => { clearTimeout(timer); el.classList.remove('pk-relay', 'pk-relay-wait'); };
+  return {
+    stop() {
+      clearTimeout(timer);
+      const left = shownAt ? Math.max(0, o.minMs - (performance.now() - shownAt)) : 0;
+      return new Promise((resolve) => { setTimeout(() => { teardown(); resolve(); }, left); });
+    },
+    destroy: teardown,
+  };
 }

@@ -11,6 +11,7 @@
 // 旋转从矩阵里拆，只能读出 -180°～180°：转了大半圈的会绕回来，看 maxRot 时记得这一点。
 // 内置浏览器面板收起时页面时间轴不走：scrub 照样能用；要测「关上以后」先调 PathProbe.flush()。
 // 拿到数字后对照 references/motion-spec.md 的表：时长、冲过头的距离、自转角度、错开间隔。
+// 点击区：PathProbe.hitAreas() 列出实际能点到的范围不到 44px 的元素（含 ::before 撑大的部分）。
 // 开和关都要量。peaks 里的 startJump 是「触发前一刻」和「动画第 0 帧」的差：不为 0 就是一开始先跳了一下
 // （常见原因：带 delay 的动画用了 fill: 'forwards'，等待期间回到了原样；或者没从当前位置接着走）。
 window.PathProbe = {
@@ -105,5 +106,28 @@ window.PathProbe = {
     const t = rows.map((row) => Object.fromEntries([['t', row.t], ...row.items.map((it, i) => [`#${i}`, it[field]])]));
     console.table(t);
     return t;
+  },
+  // 量点击区（规则 14）：从每个可点元素的中心往四个方向一像素一像素地问「这里点下去会落到谁身上」，
+  // 量出实际能点到的宽和高。::before 撑大的点击区也算在内，被别的东西盖住的部分不算。
+  // 只量视口里看得见的元素；返回不到 min 的那些（按像素取样，留 1px 误差），以及中心就被盖住的（covered）。
+  // covered 常见的是滚到固定底栏下面的那几行，那是正常的；一直被盖着、怎么滚都点不到的才是问题。
+  hitAreas({ min = 44, root = document, selector = 'button, a[href], input, select, textarea, summary, [role="button"], [role="switch"], [role="checkbox"], [role="menuitem"], [role="tab"], [tabindex]:not([tabindex="-1"])' } = {}) {
+    const name = (el) => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList.length ? '.' + [...el.classList].join('.') : ''} ${(el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 24)}`.trim();
+    const out = [];
+    for (const el of root.querySelectorAll(selector)) {
+      const r = el.getBoundingClientRect();
+      const cs = getComputedStyle(el);
+      if (!r.width || !r.height || cs.visibility === 'hidden' || cs.pointerEvents === 'none' || el.disabled) continue;
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      if (cx < 0 || cy < 0 || cx > innerWidth || cy > innerHeight) continue;
+      const hits = (x, y) => { const h = document.elementFromPoint(x, y); return !!h && (h === el || el.contains(h)); };
+      if (!hits(cx, cy)) { out.push({ el: name(el), covered: true }); continue; }
+      const reach = (dx, dy) => { let n = 0; while (n < 80 && hits(cx + dx * (n + 1), cy + dy * (n + 1))) n += 1; return n; };
+      const w = reach(-1, 0) + reach(1, 0) + 1;
+      const h = reach(0, -1) + reach(0, 1) + 1;
+      if (w < min - 1 || h < min - 1) out.push({ el: name(el), hit: [w, h], visual: [Math.round(r.width), Math.round(r.height)] });
+    }
+    return out;
   },
 };

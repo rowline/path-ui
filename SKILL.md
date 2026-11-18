@@ -1,6 +1,6 @@
 ---
 name: path-ui
-description: Replicate the UI and interaction feel of Path, the private social journal app (2010–2018), and extend its way of designing to things Path never had. Covers the arc-burst + button, scrollbar clock, type-dot timeline, in-place emotion picker, swinging drop modals, elastic pull-to-refresh and debossed loaders, plus rules distilled from them (where motion comes from, motion ranked by importance, stillness at rest, in-place feedback, one hue and one glyph per content type) for designing new things in Path's spirit. Ships measured timings and colors, a zero-dependency JS/CSS kit of motion parts and original glyphs with TS types, two demos, a single-file inliner, a checker and a motion probe. Use whenever the user mentions Path, 复刻 Path、Path 风格、Path 的效果/动效/交互/思路/感觉、像 Path 那样, or asks for a radial/fan-out + menu, a scrolling time indicator, a family/private timeline, emotion reactions, bouncy drop modals or similar crafted micro-interactions, even if Path isn't named.
+description: Replicate the UI and interaction feel of Path, the private social journal app (2010–2018), and extend its way of designing to things Path never had. Covers the arc-burst + button, scrollbar clock, type-dot timeline, in-place emotion picker, swinging drop modals, elastic pull-to-refresh and debossed loaders, plus rules distilled from them (where motion comes from, motion ranked by importance, stillness at rest, in-place feedback, one hue and one glyph per content type) for designing, reviewing or reworking UIs in Path's spirit. Ships measured timings and colors, a zero-dependency JS/CSS kit of motion parts and original glyphs with TS types, two demos, a single-file inliner, a checker and a motion probe. Use whenever the user mentions Path, 复刻 Path、Path 风格、Path 的效果/动效/交互/思路/感觉、像 Path 那样, or asks for a radial/fan-out + menu, a scrolling time indicator, a family/private timeline, emotion reactions, bouncy drop modals or similar crafted micro-interactions, even if Path isn't named.
 license: MIT
 ---
 
@@ -21,13 +21,16 @@ Path（2010–2018，2015 年被 Kakao 收购）是一个只给 50～150 位亲�
 | 做 Path 没有的东西（设置页、通知、上传、清单……） | [references/essence.md](references/essence.md) 的「规则」「动作分五级」「推一个新东西」，再看 `assets/path-kit/extend-demo.html` |
 | 独立项目用这套风格做**全站 UI**（变量、深色模式、字体、按钮 / 表单 / 表格、桌面端多页、扇形菜单的另一种展开方式）。已有设计系统的项目以项目自己的规范为准 | [references/design-system.md](references/design-system.md) |
 | 配色和图标：底色、品牌色、类型色、状态色怎么分工，字形怎么画、怎么复用 | [references/essence.md](references/essence.md) 规则 11–13；实测色值在 [motion-spec.md](references/motion-spec.md) 第 7 节 |
+| 审一个已有界面：怎么看、怎么量、问题怎么写怎么排；交付前的快速自查 | [references/review-checklist.md](references/review-checklist.md) |
+| 改一个已经在跑的界面，或者写规格表交给工程师 | [references/existing-ui.md](references/existing-ui.md) |
 | 要具体数字（时长、路径、角度、颜色、零件默认值），或想调强度、图标数、方向 | [references/motion-spec.md](references/motion-spec.md) |
 | 把代码接进项目（单文件、原生、React/TS、Tailwind、已有设计系统的项目），或用零件拼新东西 | [references/porting.md](references/porting.md) |
 | 直接看效果 | `assets/path-kit/demo.html`（Path 有的）、`assets/path-kit/extend-demo.html`（按规则推的） |
 
 ## 做法
 
-1. **先定四件事。** 能问就问；用户要你直接出东西，就按默认值做，交付时写明你替他定了什么。
+1. **先定五件事。** 能问就问；用户要你直接出东西，就按默认值做，交付时写明你替他定了什么。
+   - **要做什么**：新做（下面的复刻或延伸）、改一个已经在跑的界面、审一个已有界面、写规格交给别人做。改的做法看 [references/existing-ui.md](references/existing-ui.md)，审的做法和问题怎么写看 [references/review-checklist.md](references/review-checklist.md)，规格表在 existing-ui.md 最后一节。审的时候只出问题清单，用户点头再改。
    - **复刻还是延伸**：用户要的东西 Path 有（发布按钮、时间线、滚动时钟、情绪回应、弹窗、下拉刷新、星标、加载），就照原样**复刻**。Path 没有的（设置页、通知、上传、购物清单、日程……），或者只说「要 Path 的感觉 / 思路」，就是**延伸**，按第 4 步推。一个页面里常常两样都有。
    - **哪一代**：
      - Path 2 拟物：加号在角落、四分之一圆、0.5 秒、错开 36ms、不压暗。
@@ -57,7 +60,7 @@ Path（2010–2018，2015 年被 Kakao 收购）是一个只给 50～150 位亲�
    2. 每个变化都问：谁叫出来的，放第几级，要不要打断用户。
    3. 用零件拼。
    4. 配颜色和字形：底是中性的，每种内容类型一个色相、一个字形，品牌色只给最核心的入口，状态色最多一个（规则 11–13）。
-   5. 对一遍规则 5、6、10–13。
+   5. 对一遍规则 5、6、10–14。
    6. 交付时分三类说。
 
    最容易犯的错有三个：
@@ -81,7 +84,8 @@ Path（2010–2018，2015 年被 Kakao 收购）是一个只给 50～150 位亲�
      - 有 error 先改掉；warning 想一下，确实有理由就在交付时说明。
    - **浏览器里量动效**：把 `scripts/motion-probe.js` 注入页面，用 `PathProbe.scrub(…)` 定格取样，再拿 `PathProbe.peaks(…)` 给出的冲过头距离、自转、停稳时刻对照 motion-spec 的表。
      - 开和关都要量，并且在「打开到一半」时关一次。`startJump` 不为 0，就是动画开头跳了一下。
-   - **浏览器里查五件事**：开「减少动态效果」后不转不弹；键盘能用（Esc、方向键、焦点回位）；点击区够 44px；控制台没有报错；彩底上的白字形够对比度（图形 3:1，字 4.5:1），不够就开 `data-pk-contrast="more"` 或改深色字。延伸出来的东西还要把每条状态变化都走一遍：成功、失败、空、撤销。
+   - **浏览器里查五件事**：开「减少动态效果」后不移动、不缩放、不转，状态照样变；键盘能用（Esc、方向键、焦点回位）；点击区实测够 44px（`PathProbe.hitAreas()`）；控制台没有报错；彩底上的字和字形够对比度（字 4.5:1，图形 3:1；`python scripts/contrast.py --on 底色`），不够就开 `data-pk-contrast="more"` 或改深色字。
+   - **最后过一遍快速自查**：[references/review-checklist.md](references/review-checklist.md) 第 1 节的 15 条。延伸出来的东西还要把每条状态变化都走一遍：成功、失败、空、撤销。
    - **没有可视的浏览器窗口时**（或不能用内置浏览器），命令行的无头 Chrome / Edge 也算。例如用 Playwright 连系统里的浏览器，用 `emulateMedia({ reducedMotion: 'reduce' })` 测减少动效。只有静态检查不能代替这一步。
    - **对照原版**：截图和 Path 录屏比。素材的在线地址见 essence.md 末尾「素材」；用 `scripts/frame-sheet.js` 在 web.archive.org 上拼帧。
 7. **交付时说清楚，说的都要做到。**
@@ -113,8 +117,10 @@ Path（2010–2018，2015 年被 Kakao 收购）是一个只给 50～150 位亲�
 path-ui/
 ├── SKILL.md
 ├── references/
-│   ├── essence.md          设计精华：七条取向、两代骨架、十个模式；十三条规则（含颜色和字形）、动作分五级、推一个新东西；不要照搬的
+│   ├── essence.md          设计精华：七条取向、两代骨架、十个模式；十四条规则（含颜色、字形和控件状态）、动作分五级、推一个新东西；不要照搬的
 │   ├── design-system.md    独立项目的全站规范：双主题与三层表面、字号、按钮/表单/列表/表格/弹窗、多页主角与验收（取值多为自定）
+│   ├── review-checklist.md 快速自查 15 条；审一个已有界面的做法、问题怎么写怎么排
+│   ├── existing-ui.md      改一个已有界面（先跑通原样、功能路径表、分清模拟）；交付规格表
 │   ├── motion-spec.md      时长、路径、角度、颜色，每个数字标了来源；强度、图标数、方向的规则；零件的默认值
 │   └── porting.md          单文件 / 原生 / React+TS / Tailwind / 已有设计系统的接法；用零件拼新东西
 ├── assets/path-kit/
@@ -129,6 +135,7 @@ path-ui/
 └── scripts/
     ├── inline_kit.py       把 path-kit 内联进页面，得到双击能开的单文件
     ├── check_prototype.py  静态检查底线：品牌字样、减少动效、Esc、循环动画、写死的日期、本地引用
-    ├── motion-probe.js     在浏览器里定格取样动画，量冲过头、自转、停稳时刻、开头有没有跳
+    ├── contrast.py         算对比度：两色之间、某个底上用白字还是深色字、kit 的类型色和筛选色
+    ├── motion-probe.js     在浏览器里定格取样动画，量冲过头、自转、停稳时刻、开头有没有跳；量点击区
     └── frame-sheet.js      在 web.archive.org 上把 Path 录屏拼成帧网格，用来量动效和取色
 ```

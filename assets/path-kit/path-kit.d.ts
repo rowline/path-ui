@@ -25,7 +25,7 @@ export const motion: {
   reaction: { inMs: number; fromScale: number; faceMs: number; faceStaggerMs: number; overshoot: number; outMs: number };
   modal: { inMs: number; outMs: number; scrim: number; scrimMs: number; swing: [number, number, number, number]; fallTilt: number };
   star: { onMs: number; offMs: number; overshoot: number };
-  loader: { stepMs: number };
+  loader: { stepMs: number; delay: number; minMs: number };
   cover: { parallax: number; fadeEnd: number; compactFrom: number };
   pull: { resistance: number; threshold: number; max: number; backMs: number };
 };
@@ -50,6 +50,8 @@ export interface FlyOptions {
   scale?: [number, number];
   /** 透明度曲线 [时刻, 透明度]，不给就不动透明度。 */
   fade?: Track | null;
+  /** 减少动效时怎么替换：'in' 在终点淡入，'out' 在起点淡出，'snap' 直接到终点；不给就按 fade 判断。 */
+  reduced?: 'in' | 'out' | 'snap' | null;
   ms?: number; delay?: number; easing?: string; fill?: FillMode;
 }
 /** 沿直线飞，可冲过头、回落、边飞边转。发布菜单的图标就是它。 */
@@ -167,4 +169,5 @@ export function pullToRefresh(scrollEl: HTMLElement, opts: {
 
 export function popToggle(btn: HTMLElement, opts?: { on?: boolean; onChange?: (on: boolean) => void }): Destroyable;
 
-export function relayLoader(el: HTMLElement, glyphs?: string[]): Destroyable;
+/** 压印加载。delay：晚多久才出现（默认 400ms）；minMs：出现后至少留多久（默认 500ms）。等完了调 stop()。 */
+export function relayLoader(el: HTMLElement, glyphs?: string[], opts?: { delay?: number; minMs?: number }): Destroyable & { stop(): Promise<void> };

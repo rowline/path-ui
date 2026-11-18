@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>家里的清单</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f6f3ef; color: #2b2724; }
+  main { max-width: 420px; margin: 0 auto; padding: 20px 16px 40px; }
+  h1 { margin: 0 0 12px; font-size: 20px; }
+  form { display: flex; gap: 8px; }
+  input[type="text"] { flex: 1; min-height: 44px; padding: 0 12px; border: 1px solid #d9d2ca; border-radius: 10px; font: inherit; background: #fff; }
+  form button { min-height: 44px; padding: 0 16px; border: 0; border-radius: 10px; background: #2b2724; color: #fff; font: inherit; cursor: pointer; }
+  .filters { display: flex; gap: 8px; margin: 14px 0 6px; }
+  .filters button { min-height: 36px; padding: 0 12px; border: 1px solid #d9d2ca; border-radius: 18px; background: #fff; font: inherit; cursor: pointer; }
+  .filters button[aria-pressed="true"] { background: #2b2724; color: #fff; border-color: #2b2724; }
+  ul { list-style: none; margin: 8px 0 0; padding: 0; }
+  li { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 4px; border-bottom: 1px solid #e6dfd7; }
+  li label { flex: 1; display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; }
+  li input[type="checkbox"] { width: 20px; height: 20px; }
+  li.done .text { color: #9b928a; text-decoration: line-through; }
+  li .remove { width: 44px; height: 44px; border: 0; background: transparent; color: #9b928a; font-size: 18px; cursor: pointer; }
+  .empty { padding: 32px 0; text-align: center; color: #9b928a; }
+  .hint { margin-top: 16px; color: #9b928a; font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>家里的清单</h1>
+  <form id="add-form">
+    <input type="text" id="new-text" placeholder="加一样东西，回车也行" aria-label="新的一项" autocomplete="off">
+    <button type="submit">加上</button>
+  </form>
+  <div class="filters" role="group" aria-label="筛选">
+    <button type="button" data-filter="all" aria-pressed="true">全部 <span data-count="all"></span></button>
+    <button type="button" data-filter="todo" aria-pressed="false">没买的 <span data-count="todo"></span></button>
+    <button type="button" data-filter="done" aria-pressed="false">买好的 <span data-count="done"></span></button>
+  </div>
+  <ul id="list"></ul>
+  <p class="empty" id="empty" hidden>这里还没有东西。</p>
+  <p class="hint">按 N 键直接开始输入。</p>
+</main>
+
+<script>
+const KEY = 'family-list-v1';
+let items = JSON.parse(localStorage.getItem(KEY) || 'null') || [
+  { id: 1, text: '鸡蛋', done: false },
+  { id: 2, text: '外婆的降压药', done: false },
+  { id: 3, text: '朵朵的作业本', done: true },
+  { id: 4, text: '洗衣液', done: false },
+];
+let filter = 'all';
+const save = () => localStorage.setItem(KEY, JSON.stringify(items));
+
+function render() {
+  const list = document.getElementById('list');
+  list.textContent = '';
+  const shown = items.filter((i) => filter === 'all' || (filter === 'done' ? i.done : !i.done));
+  for (const i of shown) {
+    const li = document.createElement('li');
+    li.dataset.id = i.id;
+    li.className = i.done ? 'done' : '';
+    li.innerHTML = '<label><input type="checkbox"><span class="text"></span></label><button type="button" class="remove" aria-label="删掉">×</button>';
+    li.querySelector('.text').textContent = i.text;
+    li.querySelector('input').checked = i.done;
+    list.appendChild(li);
+  }
+  document.getElementById('empty').hidden = shown.length > 0;
+  document.querySelector('[data-count="all"]').textContent = items.length;
+  document.querySelector('[data-count="todo"]').textContent = items.filter((i) => !i.done).length;
+  document.querySelector('[data-count="done"]').textContent = items.filter((i) => i.done).length;
+}
+
+document.getElementById('add-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const input = document.getElementById('new-text');
+  const text = input.value.trim();
+  if (!text) return;
+  items.unshift({ id: Date.now(), text, done: false });
+  input.value = '';
+  save();
+  render();
+});
+
+document.getElementById('list').addEventListener('change', (e) => {
+  if (e.target.type !== 'checkbox') return;
+  const id = Number(e.target.closest('li').dataset.id);
+  const it = items.find((i) => i.id === id);
+  it.done = e.target.checked;
+  save();
+  render();
+});
+
+document.getElementById('list').addEventListener('click', (e) => {
+  if (!e.target.classList.contains('remove')) return;
+  if (!confirm('删掉这一项？')) return;
+  const id = Number(e.target.closest('li').dataset.id);
+  items = items.filter((i) => i.id !== id);
+  save();
+  render();
+});
+
+document.querySelector('.filters').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  filter = b.dataset.filter;
+  document.querySelectorAll('.filters button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  render();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key.toLowerCase() === 'n' && !e.target.matches('input, textarea')) {
+    e.preventDefault();
+    document.getElementById('new-text').focus();
+  }
+});
+
+render();
+</script>
+</body>
+</html>
