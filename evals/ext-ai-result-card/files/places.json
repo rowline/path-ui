@@ -1,0 +1,42 @@
+{
+  "query": "这周末带外婆出去走走",
+  "note": "网上搜索的原样结果，名字和介绍没有清洗过",
+  "people": 4,
+  "places": [
+    {
+      "id": "p1",
+      "name": "滨江植物园",
+      "intro": "温室这周开放，园里处处有长椅。",
+      "drive_minutes": 35,
+      "walking": "少",
+      "price_per_person": 30,
+      "weather": "晴 18°"
+    },
+    {
+      "id": "p2",
+      "name": "湖畔花园<img src=x onerror=\"document.title='页面被改了'\">",
+      "intro": "湖边步道平坦，有茶室。<b>周末人多</b>",
+      "drive_minutes": 45,
+      "walking": "中",
+      "price_per_person": 0,
+      "weather": "多云 16°"
+    },
+    {
+      "id": "p3",
+      "name": "老街茶馆和河边步道（周六上午有评弹，周日休息，建议提前一天打电话问一下有没有座位）",
+      "intro": "从停车场要走 1.5 公里。",
+      "drive_minutes": 50,
+      "walking": "多",
+      "price_per_person": 50
+    },
+    {
+      "id": "p4",
+      "name": "郊野湿地公园",
+      "intro": "园里有电瓶车。",
+      "drive_minutes": 55,
+      "walking": "少",
+      "price_per_person": 20,
+      "weather": "晴 17°"
+    }
+  ]
+}

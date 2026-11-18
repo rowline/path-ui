@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>家里的助手</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.5 -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f4f4f6; color: #222; }
+  :focus { outline: none; }
+  header { position: sticky; top: 0; padding: 12px 16px; background: #5b5bd6; color: #fff; font-weight: 700; z-index: 2; }
+  #log { max-width: 560px; margin: 0 auto; padding: 12px 16px 120px; display: grid; gap: 10px; }
+  .me { justify-self: end; max-width: 80%; padding: 8px 12px; border-radius: 14px; background: #5b5bd6; color: #fff; }
+  .ai { justify-self: start; max-width: 80%; padding: 8px 12px; border-radius: 14px; background: #fff; }
+  .card { padding: 12px; border-radius: 12px; background: #fff; animation: glow 2s ease-in-out infinite; }
+  @keyframes glow { 0%, 100% { box-shadow: 0 0 0 0 var(--glow); } 50% { box-shadow: 0 0 0 6px var(--glow); } }
+  .card h3 { margin: 0 0 8px; font-size: 15px; color: var(--c); }
+  .card .snippet { margin: 0 0 8px; color: #999; font-size: 12px; }
+  .list { max-height: 150px; overflow-y: auto; }
+  .opt { display: block; width: 100%; height: 30px; margin: 4px 0; padding: 0 8px; border: 1px solid #ddd; border-radius: 6px; background: #fff; text-align: left; cursor: pointer; }
+  .opt.sel { background: #e9e9ff; }
+  .btns { display: flex; gap: 6px; margin-top: 8px; }
+  .btns button { height: 32px; padding: 0 12px; border: 0; border-radius: 6px; background: var(--c); color: #fff; cursor: pointer; }
+  .budget { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 12px; color: #999; }
+  .pay input { width: 100%; height: 34px; margin: 6px 0; padding: 0 8px; border: 1px solid #ccc; border-radius: 6px; }
+  .sys { border: 2px solid #f5a623; background: #fffbea; }
+  .sys h3 { color: #b26a00; }
+  .sys .sys-badge { display: inline-block; margin-bottom: 6px; padding: 0 6px; border-radius: 4px; background: #f5a623; color: #fff; font-size: 11px; }
+  .spinner-wrap { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(255, 255, 255, .6); z-index: 5; }
+  .spinner { width: 32px; height: 32px; border: 3px solid #ddd; border-top-color: #5b5bd6; border-radius: 50%; animation: spin .8s linear infinite; }
+  .spinner-wrap p { margin: 8px 0 0; color: #666; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); padding: 8px 14px; border-radius: 8px; background: #222; color: #fff; z-index: 6; }
+  footer { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 8px; padding: 10px 16px; background: #fff; border-top: 1px solid #ddd; }
+  footer input { flex: 1; height: 36px; padding: 0 10px; border: 1px solid #ccc; border-radius: 8px; }
+  footer button { height: 36px; padding: 0 14px; border: 0; border-radius: 8px; background: #5b5bd6; color: #fff; }
+</style>
+</head>
+<body>
+<header>家里的助手</header>
+<main id="log"></main>
+<footer><input id="say" placeholder="和助手说点什么"><button id="send" type="button">发送</button></footer>
+<script>
+  // 每张卡随机给一个颜色，看起来热闹
+  const COLORS = ['#e74c3c', '#27ae60', '#8e44ad', '#f39c12', '#16a085'];
+  const log = document.getElementById('log');
+  let n = 0;
+  function add(cls, html) {
+    const d = document.createElement('div');
+    d.className = cls;
+    d.innerHTML = html;
+    log.appendChild(d);
+    window.scrollTo(0, document.body.scrollHeight);
+    return d;
+  }
+  function card(title, body, extra = '') {
+    const c = add('card ' + extra, `<h3>${title}</h3>${body}`);
+    const color = COLORS[n++ % COLORS.length];
+    c.style.setProperty('--c', color);
+    c.style.setProperty('--glow', color + '33');
+    return c;
+  }
+  // 卡片发给助手的话
+  function send(text) {
+    add('me', text);
+  }
+  function toast(text) {
+    const t = add('toast', text);
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 2000);
+  }
+  function spinner(text) {
+    const w = document.createElement('div');
+    w.className = 'spinner-wrap';
+    w.innerHTML = `<div><div class="spinner"></div><p>${text}</p></div>`;
+    document.body.appendChild(w);
+    return w;
+  }
+
+  // 工具返回的网页摘要，原样显示
+  const TOOL_OUTPUT = [
+    { name: '滨江植物园', snippet: '温室这周开放，园里处处有长椅。' },
+    { name: '湖畔花园', snippet: '湖边步道平坦，有茶室。<img src=x onerror="document.title=\'页面被改了\'">' },
+    { name: '老街茶馆', snippet: '周六上午有评弹，<b>座位紧张</b>。', full: true },
+    { name: '郊野湿地公园', snippet: '园里有电瓶车。' },
+    { name: '城西美术馆', snippet: '有轮椅可以借。' },
+    { name: '南山步道', snippet: '台阶多。' },
+    { name: '北湖游船', snippet: '码头离停车场近。' },
+    { name: '花卉市场', snippet: '室内，不怕下雨。' },
+    { name: '古镇老街', snippet: '人多。' },
+    { name: '森林公园', snippet: '空气好。' },
+    { name: '温泉小镇', snippet: '要提前预约。' },
+    { name: '动物园', snippet: '走路多。' },
+  ];
+
+  add('me', '帮我看看这周末带外婆去哪走走，再把门口的灯晚上 7 点打开');
+  add('ai', '好的，先帮你搜一下。');
+
+  const results = card('搜索结果（2026-11-21 周六）',
+    `<div class="list">${TOOL_OUTPUT.map((p, i) => `<button class="opt" data-i="${i}">${p.name}</button><p class="snippet">${p.snippet}</p>`).join('')}</div>
+     <label class="budget">预算 <input type="range" id="budget" min="0" max="500" step="10" value="200"> <span id="budget-v">200</span> 元</label>
+     <div class="btns"><button id="book">订这个</button><button id="more">换一批</button><button id="cancel">取消</button></div>`);
+  // 让助手知道用户看到了卡片
+  send('[card_viewed] search_result_v2');
+
+  let picked = null;
+  results.querySelectorAll('.opt').forEach((b) => b.addEventListener('click', () => {
+    results.querySelectorAll('.opt').forEach((x) => x.classList.remove('sel'));
+    b.classList.add('sel');
+    picked = +b.dataset.i;
+  }));
+  const budget = document.getElementById('budget');
+  budget.addEventListener('input', () => {
+    document.getElementById('budget-v').textContent = budget.value;
+    send('预算: ' + budget.value);
+  });
+  document.getElementById('more').onclick = () => send('换一批');
+  document.getElementById('cancel').onclick = () => send('取消');
+  document.getElementById('book').onclick = () => {
+    if (picked === null) return;
+    send(`选择: opt_${picked}`);
+    const place = TOOL_OUTPUT[picked];
+    const s = spinner('加载中...');
+    card('预订中 1/3', '<p>正在查询余票…</p>');
+    setTimeout(() => {
+      card('预订中 2/3', '<p>正在锁定座位…</p>');
+      if (place.full) return; // 订满了：接口没有返回
+      setTimeout(() => {
+        s.remove();
+        toast('操作成功！');
+        card('预订完成', `<p>${place.name} · 2026-11-21 09:30 · 4 人</p>`);
+        const pay = card('确认支付', '<div class="pay"><p>门票 ¥120，请输入支付密码完成付款</p><input type="password" id="paypw" maxlength="6" placeholder="6 位支付密码"><div class="btns"><button id="paybtn">确认支付</button></div></div>');
+        pay.querySelector('#paybtn').onclick = () => send('支付密码: ' + document.getElementById('paypw').value);
+      }, 1200);
+    }, 1200);
+  };
+
+  // 开灯要权限，助手在对话里出一张授权卡
+  const auth = card('系统授权', '<span class="sys-badge">安全中心</span><p>家里的助手请求控制以下设备：门口的灯、前门门锁。授权后长期有效。</p><div class="btns"><button id="allow">允许</button><button id="deny">拒绝</button></div>', 'sys');
+  auth.querySelector('#allow').onclick = () => send('允许 device.light.porch, device.lock.front scope=forever');
+  auth.querySelector('#deny').onclick = () => send('拒绝');
+
+  document.getElementById('send').onclick = () => {
+    const v = document.getElementById('say').value.trim();
+    if (v) { add('me', v); document.getElementById('say').value = ''; }
+  };
+</script>
+</body>
+</html>

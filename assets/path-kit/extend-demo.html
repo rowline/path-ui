@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>推出来的两个例子</title>
+<title>推出来的三个例子</title>
 <link rel="stylesheet" href="path-kit.css">
 <!--
-  这一页演示「原 App 没有的东西，按规则推出来怎么做」：上传照片、滑动归档。
-  规则见 ../../references/essence.md 的「规则」一节；界面上不写来源 App 的名字（skill 底线）。
-  只用 path-kit 的零件拼：flyFrom / flyTo / fly / pop / fadeIn / dropModal / relayLoader / rubber / .pk-deboss。
+  这一页演示「原 App 没有的东西，按规则推出来怎么做」：上传照片、滑动归档、AI 在对话里给的结果卡。
+  规则见 ../../references/essence.md 的「规则」一节，结果卡另见 ../../references/ai-views.md；界面上不写来源 App 的名字（skill 底线）。
+  只用 path-kit 的零件拼：flyFrom / flyTo / fly / pop / fadeIn / growFrom / shrinkTo / dropModal / relayLoader / rubber / .pk-deboss。
 -->
 <style>
   * { box-sizing: border-box; }
@@ -68,13 +68,69 @@
   .tabs .count { position: relative; }
   .tabs .badge { position: absolute; left: 14px; top: -6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #8a827b; color: #fff; font-size: 11px; line-height: 18px; text-align: center; font-weight: 700; }
   .tabs .badge[hidden] { display: none; }
+
+  /* ---- 对话里的结果卡（references/ai-views.md） ---- */
+  #chat-scroll { bottom: 0; }
+  .chat { list-style: none; margin: 0; padding: 14px 12px 24px; display: grid; gap: 10px; align-content: start; }
+  .msg { max-width: 84%; padding: 8px 12px; border-radius: 16px; overflow-wrap: anywhere; }
+  .msg.me { justify-self: end; background: var(--pk-card); box-shadow: 0 1px 2px rgba(0,0,0,.08); border-end-end-radius: 6px; }
+  .msg.ai { justify-self: start; background: var(--pk-wash); border-end-start-radius: 6px; }
+  .chat > .card-wrap { justify-self: stretch; }
+  /* 卡片的强调色就是内容类型的颜色：这是一张「去哪」的卡，用地点色（规则 12） */
+  .card { --accent: var(--pk-type-place); display: grid; gap: 10px; padding: 12px; border-radius: 14px; background: var(--pk-card); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .card:focus { outline: none; }
+  .card-head { display: flex; align-items: center; gap: 10px; }
+  /* 纸上的类型圆：彩底白字形（规则 12） */
+  .card-head .type { width: 30px; height: 30px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; }
+  .card-head .type svg { width: 18px; height: 18px; }
+  .card-head b { display: block; font-size: 15px; }
+  .card-head small, .card .meta { color: #6f6862; font-size: 12px; }
+  .card .big { margin: 0; font-size: 17px; font-weight: 700; }
+  .opts { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .opt { width: 100%; min-height: 52px; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; padding: 8px 12px; border: 0; border-radius: 10px; background: var(--pk-paper); color: var(--pk-ink); font: inherit; text-align: start; cursor: pointer; transition: transform 200ms cubic-bezier(.2,.9,.3,1), opacity 200ms linear; }
+  .opt b { display: block; font-size: 14px; overflow-wrap: anywhere; }
+  .opt .tick { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; box-shadow: inset 0 0 0 1.5px #b8afa7; color: transparent; }
+  .opt .tick svg { width: 14px; height: 14px; }
+  /* 选中不只靠颜色：加描边、打勾（规则 14） */
+  .opt[aria-pressed="true"] { background: var(--pk-card); box-shadow: inset 0 0 0 2px var(--accent); }
+  .opt[aria-pressed="true"] .tick { background: var(--accent); box-shadow: none; color: #fff; }
+  .acts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+  .primary, .plain { min-height: 44px; border: 0; font: inherit; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px; transition: transform 200ms cubic-bezier(.2,.9,.3,1), opacity 200ms linear; }
+  .primary { min-width: 120px; padding: 0 18px; border-radius: 22px; background: var(--accent); color: #fff; font-weight: 700; }
+  .primary[aria-disabled="true"] { background: var(--pk-wash); color: #6f6862; cursor: not-allowed; }
+  .primary[aria-busy="true"] { cursor: progress; }
+  .primary .pk-relay svg { width: 18px; height: 18px; }
+  .plain { padding: 0 12px; border-radius: 22px; background: transparent; color: var(--pk-ink); font-weight: 600; }
+  .acts .why { font-size: 12px; color: #6f6862; }
+  .opt:active, .primary:not([aria-disabled="true"]):active, .plain:active, .sheet-close:active, .col-pick:active { transform: scale(.96); transition-duration: 60ms; }
+  .opt:focus-visible, .primary:focus-visible, .plain:focus-visible, .sheet-close:focus-visible, .col-pick:focus-visible { outline: 2px solid var(--pk-ink); outline-offset: 2px; }
+  .card .err { margin: 0; padding: 8px 10px; border-radius: 8px; background: var(--pk-paper); }
+  .card .err b { display: block; }
+  .card .empty-note { display: flex; gap: 10px; align-items: center; color: #6f6862; }
+  .card .empty-note .pk-deboss svg { width: 40px; height: 40px; }
+  /* 点开的比较面板：从卡片长出来，关上缩回卡片（规则 1） */
+  .sheet { position: absolute; left: 8px; right: 8px; bottom: 8px; top: calc(var(--pk-bar-h) + 56px); z-index: 25; display: grid; grid-template-rows: auto 1fr auto; border-radius: 16px; background: var(--pk-card); box-shadow: 0 10px 30px rgba(0,0,0,.22); overflow: hidden; }
+  .sheet-top { display: flex; align-items: center; justify-content: space-between; padding: 4px 4px 0 14px; }
+  .sheet-top b { font-size: 15px; }
+  .sheet-close { width: 44px; height: 44px; border: 0; border-radius: 50%; background: transparent; color: var(--pk-ink); display: grid; place-items: center; cursor: pointer; font-size: 22px; line-height: 1; }
+  .sheet-body { overflow: auto; padding: 4px 10px 8px; }
+  .cmp { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+  .cmp th, .cmp td { padding: 8px 4px; border-bottom: 1px solid #eee5dd; text-align: start; vertical-align: top; overflow-wrap: anywhere; }
+  .cmp tbody th { width: 64px; color: #6f6862; font-weight: 400; }
+  .col-pick { width: 100%; min-height: 44px; padding: 4px 6px; border: 0; border-radius: 8px; background: var(--pk-paper); color: var(--pk-ink); font: inherit; font-weight: 700; text-align: start; cursor: pointer; display: grid; gap: 2px; transition: transform 200ms cubic-bezier(.2,.9,.3,1), opacity 200ms linear; }
+  .col-pick[aria-pressed="true"] { background: var(--pk-card); box-shadow: inset 0 0 0 2px var(--pk-type-place); }
+  .col-pick .mark { font-size: 11px; font-weight: 400; color: #6f6862; }
+  .sheet-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 8px 10px 10px; border-top: 1px solid #eee5dd; --accent: var(--pk-type-place); }
+  @media (prefers-reduced-motion: reduce) {
+    .opt:active, .primary:not([aria-disabled="true"]):active, .plain:active, .sheet-close:active, .col-pick:active { transform: none; opacity: .7; }
+  }
 </style>
 </head>
 <body>
 <div class="page">
   <div class="panel">
-    <h1>推出来的两个例子</h1>
-    <p>原来的 App 没有这两样东西。这里按规则推出每一步该怎么动，只用零件拼，没有另写曲线。</p>
+    <h1>推出来的三个例子</h1>
+    <p>原来的 App 没有这三样东西。这里按规则推出每一步该怎么动，只用零件拼，没有另写曲线。</p>
     <fieldset>
       <legend>强度</legend>
       <label><input type="radio" name="k" value="1" checked> 原样</label>
@@ -99,6 +155,21 @@
       <li>原地留一行「撤销」，撤销时倒着飞回来（2、7）</li>
       <li>每条都有归档按钮，用键盘也能做（9）</li>
       <li>都归档了，出现压印的空状态（10）</li>
+    </ol>
+    <fieldset>
+      <legend>对话</legend>
+      <label><input type="checkbox" id="book-fail"> 下一次预订失败</label>
+      <label><input type="checkbox" id="find-none"> 这次没找到地方</label>
+      <p><button type="button" id="replay" style="min-height:36px;padding:0 12px;border:0;border-radius:8px;background:#fff;box-shadow:inset 0 0 0 1px #d8cfc6;font:inherit;cursor:pointer">从头再来一遍</button></p>
+    </fieldset>
+    <h2>对话里的结果卡</h2>
+    <ol>
+      <li>卡片从助手的话里长出来，一眼看到「几个地方、等你挑」（规则 1，第 4 级）</li>
+      <li>挑一个就在卡片上，打勾加描边，不只换颜色（7、14）</li>
+      <li>「比较」从卡片里长出来，关上缩回去；两边选的是同一个（1）</li>
+      <li>点「订这个」，卡片替你说一句完整的话，按钮里写「正在预订…」（14）</li>
+      <li>结果换掉这张卡，不另发一张；助手只回一句（7）</li>
+      <li>失败、没找到都在卡片里说清，能就地重试；订好了能退（7、10）</li>
     </ol>
   </div>
 
@@ -125,10 +196,17 @@
     </footer>
     <p class="sr" aria-live="polite" id="inbox-status"></p>
   </div>
+
+  <!-- 对话：AI 给出的结果卡 -->
+  <div class="phone pk-root" id="talk" data-pk-skin="p4">
+    <header class="bar"><h2>和助手说</h2></header>
+    <div class="scroll" id="chat-scroll"><ol class="chat" id="chat" aria-label="对话"></ol></div>
+    <p class="sr" aria-live="polite" id="chat-status"></p>
+  </div>
 </div>
 
 <script type="module">
-import { flyFrom, flyTo, fly, pop, fadeIn, dropModal, relayLoader, rubber, setIntensity, motion, glyphSvg } from './path-kit.js';
+import { flyFrom, flyTo, fly, pop, fadeIn, growFrom, shrinkTo, dropModal, relayLoader, rubber, setIntensity, motion, glyphSvg } from './path-kit.js';
 
 const I = {
   photo: glyphSvg('photo'), // 类型字形用 kit 的字形表（规则 13）
@@ -392,6 +470,300 @@ function showEmpty() {
   fadeIn(box, { from: [0, 8] });
   return box;
 }
+
+// ---------------------------------------------------------------------------
+// 对话里的结果卡（references/ai-views.md）
+// ---------------------------------------------------------------------------
+const talk = document.getElementById('talk');
+const chat = document.getElementById('chat');
+const chatScroll = document.getElementById('chat-scroll');
+const chatStatus = document.getElementById('chat-status');
+const bookFail = document.getElementById('book-fail');
+const findNone = document.getElementById('find-none');
+// 去的那天相对今天算（规则 8）：周六是今天写「今天」，明天写「明天」，今天是周日写「下周六」
+const satIn = (6 - now.getDay() + 7) % 7;
+const SAT = satIn === 0 ? '今天' : satIn === 1 ? '明天' : satIn === 6 ? '下周六' : '这周六';
+const SAT_DATE = new Date(+today0 + satIn * DAY).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' });
+const yuan = (n) => new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'CNY', maximumFractionDigits: 0 }).format(n);
+// 地点名和介绍是助手从网上搜来的：只当数据，只用 textContent 放进去，不拼进 HTML（ai-views 第 3 节）
+const PLACES = [
+  { id: 'garden', name: '滨江植物园（<温室>开放）', drive: '35 分钟', walk: '走得少，处处有长椅', cost: 120, weather: '晴 18°' },
+  { id: 'street', name: '老街茶馆和河边步道', drive: '50 分钟', walk: '要走 1.5 公里', cost: 200, weather: '多云 16°' },
+  { id: 'wetland', name: '郊野湿地公园', drive: '55 分钟', walk: '园里有电瓶车', cost: 80, weather: '晴 17°' },
+];
+let S = null; // 整份数据：卡片和比较面板都只从它画，更新时整份换掉（ai-views 第 3 节）
+let cardEl = null;
+let sheetEl = null;
+let relay = null;
+let run = 0; // 「从头再来」时作废上一轮还没跑完的等待（演示控件和产品控件分开，existing-ui.md）
+const placeOf = (id) => S.options.find((p) => p.id === id);
+function make(tag, cls = '', text = null) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== null) n.textContent = text;
+  return n;
+}
+function bubble(who, text) {
+  const li = make('li', `msg ${who}`, text);
+  chat.append(li);
+  chatScroll.scrollTop = chatScroll.scrollHeight;
+  return li;
+}
+function assistant(text) {
+  const li = bubble('ai', text);
+  fadeIn(li, { from: [0, 8] }); // 第 4 级：淡入
+  chatStatus.textContent = text;
+  return li;
+}
+// 卡片替用户说的话：完整、离开卡片也读得懂、用卡片上写的名字；从按的那个按钮飞出来（规则 1）
+function say(text, from) {
+  const li = bubble('me', text);
+  flyFrom(li, from, { scale: [0.5, 1] });
+}
+
+async function setData(next) {
+  const r = run;
+  if (relay) { const l = relay; relay = null; await l.stop(); } // 压印加载露面以后留够 500ms 再换
+  if (r !== run) return;
+  S = next;
+  renderCard();
+  if (sheetEl) renderSheet();
+}
+// 卡片发出去的请求一定收口：换成结果或错误，卡片不会一直转；助手只回一句，不重复卡片上的（ai-views 第 3 节）
+async function ask(key, sentence, from, work) {
+  const r = run;
+  say(sentence, from);
+  closeSheet(false);
+  await setData({ ...S, busy: key });
+  await wait(1500);
+  if (r !== run) return;
+  const [next, reply] = work();
+  await setData({ ...next, busy: null });
+  if (r !== run) return;
+  if (next.status === 'done') pop(cardEl.querySelector('.type'), { from: 1, peak: 0.25, fill: 'none' }); // 订好了冒一下（第 3 级）
+  assistant(reply);
+}
+function book(btn) {
+  const p = placeOf(S.picked);
+  ask('book', `订${SAT}上午 9:30 的${p.name}，4 个人，门票 ${yuan(p.cost)}`, btn, () => {
+    if (bookFail.checked) { bookFail.checked = false; return [{ ...S, status: 'error' }, '没订上，原因写在卡片里了。']; }
+    return [{ ...S, status: 'done', time: '上午 9:30' }, `订好了，提醒设在${SAT}早上 8:30。`];
+  });
+}
+function retry(btn) {
+  const p = placeOf(S.picked);
+  ask('retry', `那就订${SAT}下午 2:00 的${p.name}，还是 4 个人`, btn, () => [{ ...S, status: 'done', time: '下午 2:00' }, `订好了，提醒设在${SAT}中午 1:00。`]);
+}
+function cancel(btn) {
+  const p = placeOf(S.picked);
+  ask('cancel', `把${SAT}${S.time} 的${p.name}退掉`, btn, () => [{ ...S, status: 'choosing' }, '退掉了，钱原路退回。想换一个，在卡片上再挑。']);
+}
+function widen(btn) {
+  ask('widen', '放宽到两小时车程，再找找', btn, () => [{ ...S, status: 'choosing', options: PLACES, picked: null, range: 2 }, '放宽以后找到三个，在卡片里。']);
+}
+// 挑一个只改卡片自己的数据，什么也不发（ai-views 第 3 节：卡片自己能做的留在卡片里）
+async function pick(id) {
+  if (S.status !== 'choosing' || S.busy) return;
+  await setData({ ...S, picked: id });
+  const tick = cardEl.querySelector(`[data-k="opt-${id}"] .tick`);
+  if (tick) pop(tick, { from: 1, peak: 0.3, fill: 'none' }); // 选中冒一下（第 3 级）
+}
+
+// 按钮：忙的时候「正在……」写在按钮自己身上，压印图标晚 400ms 才露面；别的按钮跟着点不动（规则 14）
+function action(key, label, busyLabel, cls, onClick, why = '') {
+  const b = make('button', cls);
+  b.type = 'button';
+  b.dataset.k = key;
+  const t = make('span');
+  b.append(t);
+  if (S.busy === key) {
+    t.textContent = busyLabel;
+    b.setAttribute('aria-busy', 'true');
+    b.setAttribute('aria-disabled', 'true');
+    const l = make('span');
+    b.append(l);
+    relay = relayLoader(l, [I.place, I.people, glyphSvg('calendar')]);
+    l.setAttribute('aria-hidden', 'true');
+  } else {
+    t.textContent = label;
+    if (S.busy || why) b.setAttribute('aria-disabled', 'true');
+    b.addEventListener('click', () => { if (b.getAttribute('aria-disabled') !== 'true') onClick(b); });
+  }
+  return b;
+}
+function whyNot(btn, text) {
+  const id = `why-${btn.dataset.k}`;
+  btn.setAttribute('aria-describedby', id);
+  const s = make('span', 'why', text);
+  s.id = id;
+  return s;
+}
+function statusLine() {
+  if (S.busy) return { book: '正在预订…', retry: '正在预订…', cancel: '正在退…', widen: '正在找…' }[S.busy];
+  return {
+    choosing: `${S.options.length} 个地方 · 车程都在 ${S.range} 小时内 · 等你挑一个`,
+    done: '订好了',
+    error: '没订上，等你决定',
+    empty: '没找到合适的',
+  }[S.status];
+}
+function renderCard() {
+  const c = cardEl;
+  const had = c.contains(document.activeElement);
+  const keep = had ? document.activeElement.dataset.k : null;
+  if (relay && !S.busy) { relay.destroy(); relay = null; }
+  c.replaceChildren();
+  // 一眼：这是什么、要不要你管（ai-views 第 2 节）
+  const head = make('div', 'card-head');
+  const type = make('span', 'type');
+  type.innerHTML = I.place; // kit 自己的字形，不是外来内容
+  const ttl = make('div');
+  ttl.append(make('b', '', '周末去哪'), make('small', '', statusLine()));
+  head.append(type, ttl);
+  c.append(head);
+  const acts = make('div', 'acts');
+  const p = S.picked ? placeOf(S.picked) : null;
+  if (S.status === 'choosing') {
+    const ul = make('ul', 'opts');
+    S.options.forEach((o) => {
+      const b = make('button', 'opt');
+      b.type = 'button';
+      b.dataset.k = `opt-${o.id}`;
+      b.setAttribute('aria-pressed', String(S.picked === o.id));
+      if (S.busy) b.setAttribute('aria-disabled', 'true');
+      const txt = make('span');
+      txt.append(make('b', '', o.name), make('span', 'meta', `车程 ${o.drive} · ${o.walk} · 4 人 ${yuan(o.cost)} · ${o.weather}`));
+      const tick = make('span', 'tick');
+      tick.setAttribute('aria-hidden', 'true');
+      tick.innerHTML = glyphSvg('check');
+      b.append(txt, tick);
+      b.addEventListener('click', () => { if (b.getAttribute('aria-disabled') !== 'true') pick(o.id); });
+      const li = make('li');
+      li.append(b);
+      ul.append(li);
+    });
+    c.append(ul);
+    const cmp = action('compare', '比较', '', 'plain', openSheet);
+    const go = action('book', '订这个', '正在预订…', 'primary', book, p ? '' : 'no');
+    acts.append(cmp, go);
+    if (!p && !S.busy) acts.append(whyNot(go, '先挑一个地方'));
+  } else if (S.status === 'done') {
+    c.append(make('p', 'big', `${SAT}${S.time} · ${p.name}`));
+    c.append(make('p', 'meta', `${SAT_DATE} · 4 张票 ${yuan(p.cost)} · 家里 4 个人能看到`)); // 规则 8：什么时候、谁看得到
+    acts.append(action('cancel', '退掉', '正在退…', 'plain', cancel));
+  } else if (S.status === 'error') {
+    const err = make('p', 'err');
+    err.append(make('b', '', `${p.name}这天上午的票卖完了`), make('span', 'meta', '下午 2:00 还有票。也可以换一个地方。'));
+    c.append(err);
+    acts.append(action('change', '换一个地方', '', 'plain', () => setData({ ...S, status: 'choosing', picked: null })),
+      action('retry', '订下午 2:00', '正在预订…', 'primary', retry));
+  } else {
+    const note = make('div', 'empty-note');
+    const ic = make('span', 'pk-deboss');
+    ic.innerHTML = glyphSvg('place');
+    note.append(ic, make('span', '', '一小时车程内，没找到外婆走着不累的地方。'));
+    c.append(note);
+    acts.append(action('widen', '放宽到两小时', '正在找…', 'primary', widen));
+  }
+  c.append(acts);
+  // 重画以后焦点留在同一个控件上；它没了就落在卡片上，不掉回页面开头
+  if (had) (keep && c.querySelector(`[data-k="${keep}"]`) || c).focus({ preventScroll: true });
+}
+
+// 比较面板：从卡片长出来，关上缩回卡片（规则 1）；和卡片读同一份数据
+function openSheet() {
+  if (sheetEl) return;
+  sheetEl = make('section', 'sheet');
+  sheetEl.setAttribute('role', 'dialog');
+  sheetEl.setAttribute('aria-label', '比较这几个地方');
+  sheetEl.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(true); });
+  talk.append(sheetEl);
+  renderSheet();
+  growFrom(sheetEl, cardEl, { fromScale: 0.9 });
+  sheetEl.querySelector('.col-pick')?.focus({ preventScroll: true });
+}
+async function closeSheet(returnFocus) {
+  if (!sheetEl) return;
+  const s = sheetEl;
+  sheetEl = null;
+  if (returnFocus) cardEl.querySelector('[data-k="compare"]')?.focus({ preventScroll: true });
+  await shrinkTo(s, cardEl, { toScale: 0.9 }).finished.catch(() => {});
+  s.remove();
+}
+function renderSheet() {
+  const s = sheetEl;
+  const had = s.contains(document.activeElement);
+  const keep = had ? document.activeElement.dataset.k : null;
+  s.replaceChildren();
+  const top = make('div', 'sheet-top');
+  const x = make('button', 'sheet-close', '×');
+  x.type = 'button';
+  x.dataset.k = 'close';
+  x.setAttribute('aria-label', '关上比较');
+  x.addEventListener('click', () => closeSheet(true));
+  top.append(make('b', '', '比较'), x);
+  const body = make('div', 'sheet-body');
+  const table = make('table', 'cmp');
+  const hr = make('tr');
+  hr.append(make('td'));
+  S.options.forEach((o) => {
+    const th = make('th');
+    th.scope = 'col';
+    const b = make('button', 'col-pick');
+    b.type = 'button';
+    b.dataset.k = `col-${o.id}`;
+    b.setAttribute('aria-pressed', String(S.picked === o.id));
+    b.append(make('span', '', o.name), make('span', 'mark', S.picked === o.id ? '✓ 选了这个' : '选这个'));
+    b.addEventListener('click', () => pick(o.id));
+    th.append(b);
+    hr.append(th);
+  });
+  const thead = make('thead');
+  thead.append(hr);
+  const tb = make('tbody');
+  [['车程', (o) => o.drive], ['走路', (o) => o.walk], ['4 人', (o) => yuan(o.cost)], ['天气', (o) => o.weather]].forEach(([name, f]) => {
+    const tr = make('tr');
+    const th = make('th', '', name);
+    th.scope = 'row';
+    tr.append(th);
+    S.options.forEach((o) => tr.append(make('td', '', f(o))));
+    tb.append(tr);
+  });
+  table.append(thead, tb);
+  body.append(table);
+  const foot = make('div', 'sheet-foot');
+  const go = action('sheet-book', '订这个', '正在预订…', 'primary', book, S.picked ? '' : 'no');
+  if (!S.picked) foot.append(whyNot(go, '先在上面挑一个'));
+  foot.append(go);
+  s.append(top, body, foot);
+  if (had) (keep && s.querySelector(`[data-k="${keep}"]`) || x).focus({ preventScroll: true });
+}
+
+async function replay() {
+  const r = ++run;
+  closeSheet(false);
+  if (relay) { relay.destroy(); relay = null; }
+  chat.replaceChildren();
+  chatStatus.textContent = '';
+  bubble('me', '这周末带外婆出去走走，帮我挑个地方');
+  await wait(600);
+  if (r !== run) return;
+  const none = findNone.checked;
+  const lead = assistant(none ? '找过了，近处没有合适的：' : '挑了三个，都在一小时车程内，外婆不用走太多：');
+  const wrap = make('li', 'card-wrap');
+  cardEl = make('div', 'card');
+  cardEl.tabIndex = -1;
+  cardEl.setAttribute('role', 'group');
+  cardEl.setAttribute('aria-label', '周末去哪');
+  wrap.append(cardEl);
+  chat.append(wrap);
+  S = { status: none ? 'empty' : 'choosing', options: none ? [] : PLACES, picked: null, busy: null, time: '上午 9:30', range: 1 };
+  renderCard();
+  chatScroll.scrollTop = chatScroll.scrollHeight;
+  growFrom(cardEl, lead, { fromScale: 0.94, delay: 80 }); // 从助手的话里长出来（规则 1，第 4 级）
+}
+document.getElementById('replay').addEventListener('click', replay);
+replay();
 
 document.querySelectorAll('input[name=k]').forEach((r) => r.addEventListener('change', () => setIntensity(r.value)));
 </script>

@@ -8,12 +8,13 @@ A Claude skill for rebuilding the feel of **Path** (the private social journal a
 
 - **设计精华和规则**（`references/essence.md`）：Path 的七条取向、两代骨架、十个模式；十四条规则（动作从哪来、动作分五级、平时是静的、就地发生、跟手的门槛、每类内容一个色相和一个字形、按下就有反应……），以及「推一个新东西」的步骤。
 - **审和改已有界面**（`references/review-checklist.md`、`references/existing-ui.md`）：交付前的 15 条快速自查；按 Path 的思路审一个已有界面，问题怎么写、怎么排；改一个已经在跑的界面时先跑通原样、列功能路径表；交给工程师的规格表。
+- **AI 对话里的卡片**（`references/ai-views.md`）：什么时候出卡片、对话里的一眼和点开的工作面、数据进话出、每个请求都收口、样子从数据来、满空错忙四种状态、卡片里的底线。
 - **取值表**（`references/motion-spec.md`）：时长、路径、角度、颜色。每个数字都标了来源：录屏逐帧实测、开源复刻代码，或者估的。
 - **path-kit**（`assets/path-kit/`）：零依赖的 JS/CSS，带 TypeScript 类型。
   - 动作零件：`fly`、`flyFrom`、`flyTo`、`growFrom`、`pop`、`dropIn` / `fallOut`、`turnTo`、`rubber` 等。
   - 组件：发布菜单、滚动时钟、情绪回应、掉落弹窗、封面头部、下拉刷新、星标、压印加载。
   - 17 个原创字形（`glyphSvg`），类型色、筛选色，深色主题和网页对比度版本。
-- **两个 demo**：`demo.html`（Path 有的效果）、`extend-demo.html`（Path 没有的两个东西：上传照片、滑动归档）。
+- **两个 demo**：`demo.html`（Path 有的效果）、`extend-demo.html`（Path 没有的三个东西：上传照片、滑动归档、AI 在对话里给的结果卡）。
 - **脚本**：把 kit 内联成双击能开的单文件、静态检查、算对比度、在浏览器里定格量动效和量点击区、在网页存档上把录屏拼成帧网格。
 - **评测题**（`evals/`）：skill-creator 格式，复刻题和延伸题都有。
 
@@ -52,9 +53,9 @@ python -m http.server 5181
 
 - **apple-design**：控件状态（规则 14：按下就有反应、松手才执行、选中不只靠颜色、不能用要写原因、忙碌在控件里）；减少动效是替换不是删除；加载晚露面、留够、不卡住；能撤销就不确认；量对比度和点击区；快速自查和问题清单的格式；规格表的列。
 - **high-fidelity-prototype**：改已有界面时先跑通原样、只改要改的、功能路径表、分清真的和模拟的、演示控件和产品控件分开。
-- **generative-ui**：大部分绑在 Atd 自己的运行环境上，这一版没有吸收。
+- **generative-ui**：什么时候在对话里出卡片；对话里的一眼和点开的工作面；数据进、话出，每个请求都收口；样子从内容和数据来；满空错忙四种状态；卡片里的底线（不要密码、不仿冒授权、外来内容只当文字）。有一处反过来：Atd 的小卡上不放控件，Path 的做法是小事就地做完，所以一步能做完的动作留在卡片上。
 
-没有吸收的：毛玻璃材质（和 Path 不透明的纸面正相反）、苹果的「点按不弹」（和 Path 的「冒一下」冲突，Path 的弹跳由强度控制）、原生 SwiftUI 和苹果系统控件的尺寸。
+没有吸收的：毛玻璃材质（和 Path 不透明的纸面正相反）、苹果的「点按不弹」（和 Path 的「冒一下」冲突，Path 的弹跳由强度控制）、原生 SwiftUI 和苹果系统控件的尺寸、generative-ui 的接口（`show_ui` / `update_ui`）和 macOS 字号表。
 
 ## 许可证
 

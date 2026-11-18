@@ -1,6 +1,6 @@
 ---
 name: path-ui
-description: Replicate the UI and interaction feel of Path, the private social journal app (2010–2018), and extend its way of designing to things Path never had. Covers the arc-burst + button, scrollbar clock, type-dot timeline, in-place emotion picker, swinging drop modals, elastic pull-to-refresh and debossed loaders, plus rules distilled from them (where motion comes from, motion ranked by importance, stillness at rest, in-place feedback, one hue and one glyph per content type) for designing, reviewing or reworking UIs in Path's spirit. Ships measured timings and colors, a zero-dependency JS/CSS kit of motion parts and original glyphs with TS types, two demos, a single-file inliner, a checker and a motion probe. Use whenever the user mentions Path, 复刻 Path、Path 风格、Path 的效果/动效/交互/思路/感觉、像 Path 那样, or asks for a radial/fan-out + menu, a scrolling time indicator, a family/private timeline, emotion reactions, bouncy drop modals or similar crafted micro-interactions, even if Path isn't named.
+description: Replicate the UI and interaction feel of Path, the private social journal app (2010–2018), and extend its way of designing to things Path never had. Covers the arc-burst + button, scrollbar clock, type-dot timeline, in-place emotion picker, swinging drop modals, elastic pull-to-refresh and debossed loaders, plus rules distilled from them (where motion comes from, motion ranked by importance, stillness at rest, in-place feedback, one hue and one glyph per content type) for designing, reviewing or reworking UIs in Path's spirit, including the cards and views an AI assistant shows in a chat. Ships measured timings and colors, a zero-dependency JS/CSS kit with TS types, demos and checking scripts. Use whenever the user mentions Path, 复刻 Path、Path 风格、Path 的效果/动效/交互/思路/感觉、像 Path 那样, or asks for a radial/fan-out + menu, a scrolling time indicator, a family/private timeline, emotion reactions, bouncy drop modals, AI 对话里的结果卡/选项卡 or similar crafted micro-interactions, even if Path isn't named.
 license: MIT
 ---
 
@@ -23,6 +23,7 @@ Path（2010–2018，2015 年被 Kakao 收购）是一个只给 50～150 位亲�
 | 配色和图标：底色、品牌色、类型色、状态色怎么分工，字形怎么画、怎么复用 | [references/essence.md](references/essence.md) 规则 11–13；实测色值在 [motion-spec.md](references/motion-spec.md) 第 7 节 |
 | 审一个已有界面：怎么看、怎么量、问题怎么写怎么排；交付前的快速自查 | [references/review-checklist.md](references/review-checklist.md) |
 | 改一个已经在跑的界面，或者写规格表交给工程师 | [references/existing-ui.md](references/existing-ui.md) |
+| AI 助手在对话里给的卡片和视图（结果卡、几个选项、要填的几项、预览）：要不要出、一眼和点开、数据进话出、状态和底线 | [references/ai-views.md](references/ai-views.md)，再看 `extend-demo.html` 第三块 |
 | 要具体数字（时长、路径、角度、颜色、零件默认值），或想调强度、图标数、方向 | [references/motion-spec.md](references/motion-spec.md) |
 | 把代码接进项目（单文件、原生、React/TS、Tailwind、已有设计系统的项目），或用零件拼新东西 | [references/porting.md](references/porting.md) |
 | 直接看效果 | `assets/path-kit/demo.html`（Path 有的）、`assets/path-kit/extend-demo.html`（按规则推的） |
@@ -30,7 +31,7 @@ Path（2010–2018，2015 年被 Kakao 收购）是一个只给 50～150 位亲�
 ## 做法
 
 1. **先定五件事。** 能问就问；用户要你直接出东西，就按默认值做，交付时写明你替他定了什么。
-   - **要做什么**：新做（下面的复刻或延伸）、改一个已经在跑的界面、审一个已有界面、写规格交给别人做。改的做法看 [references/existing-ui.md](references/existing-ui.md)，审的做法和问题怎么写看 [references/review-checklist.md](references/review-checklist.md)，规格表在 existing-ui.md 最后一节。审的时候只出问题清单，用户点头再改。
+   - **要做什么**：新做（下面的复刻或延伸）、改一个已经在跑的界面、审一个已有界面、写规格交给别人做。改的做法看 [references/existing-ui.md](references/existing-ui.md)，审的做法和问题怎么写看 [references/review-checklist.md](references/review-checklist.md)，规格表在 existing-ui.md 最后一节。AI 在对话里给的卡片照 [references/ai-views.md](references/ai-views.md) 做。审的时候只出问题清单，用户点头再改。
    - **复刻还是延伸**：用户要的东西 Path 有（发布按钮、时间线、滚动时钟、情绪回应、弹窗、下拉刷新、星标、加载），就照原样**复刻**。Path 没有的（设置页、通知、上传、购物清单、日程……），或者只说「要 Path 的感觉 / 思路」，就是**延伸**，按第 4 步推。一个页面里常常两样都有。
    - **哪一代**：
      - Path 2 拟物：加号在角落、四分之一圆、0.5 秒、错开 36ms、不压暗。
@@ -41,7 +42,7 @@ Path（2010–2018，2015 年被 Kakao 收购）是一个只给 50～150 位亲�
      - 压暗深浅另用 `scrim` 参数调。
 2. **先跑 demo，对着看。** 在 `assets/path-kit/` 下起静态服务：`python -m http.server 5181`。
    - `demo.html`：面板能切时代、强度、图标数、加号在哪边。
-   - `extend-demo.html`：两个 Path 没有的东西（上传照片、滑动归档），每一步都标了按哪条规则推的。
+   - `extend-demo.html`：三个 Path 没有的东西（上传照片、滑动归档、AI 在对话里给的结果卡），每一步都标了按哪条规则推的。
    - 用户要看效果时先给 demo，不要只给文字描述。
 3. **用 path-kit，不要手抄。**
    - 页面照常写 `import { … } from './path-kit.js'` 和 `<link href="path-kit.css">`。
@@ -99,6 +100,7 @@ Path（2010–2018，2015 年被 Kakao 收购）是一个只给 50～150 位亲�
    - 交付说明里写的每一项能力（键盘、减少动效、点外面收回、焦点回到哪……）都要在代码里找得到，最好是跑过的。kit 的行为照 porting.md 的原话说，别往大了说。发出去前对一遍。
    - 说明里让用户自己改的地方（强度、某个数字、换成原生滚动条），页面里要已经留好入口，照着改就能生效。单文件里只有 import 过的名字存在：叫用户「加一行 setIntensity」之前，先确认它被 import 了。
    - 跟时间有关的说法（例如「四种日期写法都看得到」）要在任何一天打开都成立；不成立就写明例外。
+   - 审查和说明里的每个数、每个「量过」「做了」「转义了」，都要能指到一次实测或一行代码。核对不了的，放进「没验证」，不要写成结论。做得越多越容易漏一条：发出去前把说明里的实测数字逐条重跑一遍。
 
 ## 底线
 
@@ -121,6 +123,7 @@ path-ui/
 │   ├── design-system.md    独立项目的全站规范：双主题与三层表面、字号、按钮/表单/列表/表格/弹窗、多页主角与验收（取值多为自定）
 │   ├── review-checklist.md 快速自查 15 条；审一个已有界面的做法、问题怎么写怎么排
 │   ├── existing-ui.md      改一个已有界面（先跑通原样、功能路径表、分清模拟）；交付规格表
+│   ├── ai-views.md         AI 在对话里给的卡片和视图：要不要出、一眼和点开、数据进话出、样子从数据来、状态、底线
 │   ├── motion-spec.md      时长、路径、角度、颜色，每个数字标了来源；强度、图标数、方向的规则；零件的默认值
 │   └── porting.md          单文件 / 原生 / React+TS / Tailwind / 已有设计系统的接法；用零件拼新东西
 ├── assets/path-kit/
@@ -131,7 +134,7 @@ path-ui/
 │   ├── path-kit.d.ts       上面这些的 TypeScript 类型
 │   ├── path-kit.css        变量（p4 / p2 皮肤、浅/深主题、类型色、筛选色、私密蓝、加深版）、组件样式、.pk-chip 筛选块、.pk-deboss 压印
 │   ├── demo.html           手机大小的家庭时间线，Path 有的效果都能点；面板能切深色、加深色，列着类型色和字形
-│   └── extend-demo.html    Path 没有的两个东西：上传照片、滑动归档，每一步标了规则
+│   └── extend-demo.html    Path 没有的三个东西：上传照片、滑动归档、对话里的结果卡，每一步标了规则
 └── scripts/
     ├── inline_kit.py       把 path-kit 内联进页面，得到双击能开的单文件
     ├── check_prototype.py  静态检查底线：品牌字样、减少动效、Esc、循环动画、写死的日期、本地引用
