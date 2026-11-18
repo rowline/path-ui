@@ -7,7 +7,7 @@
   python scripts/contrast.py --kit [path-kit.css]  查 kit 的类型色（白字形 ≥ 3）和筛选色（字 ≥ 4.5），原样和加深版各一遍
 
 颜色写 #RGB、#RRGGBB 或 rgb(r, g, b)。输出 JSON；--kit 有不达标的项时退出码为 1。
-做法借自 vendor-skills/apple-design 的 contrast.py 思路（MIT），这里是另写的简化版。
+做法借自 JUNERDD/Atd 的 apple-design 的 contrast.py 思路（MIT），这里是另写的简化版。
 """
 import json
 import re

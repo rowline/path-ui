@@ -1,7 +1,7 @@
 # 改一个已有界面，以及交付规格表
 
 > 文档类型：做法。适用范围：用 path-ui 改一个已经在跑的界面（加 Path 式的动效和交互、换掉不对的状态和反馈），或者把设计交给工程师照着做。核对基线：2026-11-18，对照 [essence.md](essence.md)、[porting.md](porting.md)。
-> 「先跑通原样再改」「功能路径表」「分清真的和模拟的」「演示控件和产品控件分开」借自 `vendor-skills/high-fidelity-prototype`（MIT）；规格表的列借自 `vendor-skills/apple-design` 的规格模板（MIT）。都按 path-ui 的规则重写过。
+> 「先跑通原样再改」「功能路径表」「分清真的和模拟的」「演示控件和产品控件分开」借自 [JUNERDD/Atd](https://github.com/JUNERDD/Atd) 的 `high-fidelity-prototype`（MIT）；规格表的列借自 Atd 的 `apple-design` 的规格模板（MIT）。都按 path-ui 的规则重写过。
 
 ## 1. 改之前
 

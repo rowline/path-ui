@@ -1,7 +1,7 @@
 # 快速自查，以及审一个已有界面
 
 > 文档类型：检查清单和做法。适用范围：用 path-ui 做完东西后的自查，以及按 Path 的思路审一个别人做的、已经在跑的界面。核对基线：2026-11-18，对照 [essence.md](essence.md) 的十四条规则、`scripts/` 下的三个检查工具。
-> 清单的格式（每次都过一遍的短清单 + 按影响排序的问题写法）借自 `vendor-skills/apple-design` 的 review-checklist（MIT），条目是按 path-ui 自己的规则重写的。
+> 清单的格式（每次都过一遍的短清单 + 按影响排序的问题写法）借自 [JUNERDD/Atd](https://github.com/JUNERDD/Atd) 的 `apple-design` 的 review-checklist（MIT），条目是按 path-ui 自己的规则重写的。
 
 ## 1. 快速自查（每次交付前，15 条都过）
 
