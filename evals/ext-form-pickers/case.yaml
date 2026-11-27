@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: ext-form-pickers
+expected_outcome: |
+  一个自包含的单文件 HTML，用弹窗（<dialog>）承载定时任务创建表单，包含基于 path-kit 封装的通用单选下拉与日期时间选择器（不使用原生 <select> 或 <input type="date|time|datetime-local">）；弹层使用 growFrom/shrinkTo/turnTo/pop 与中性选中态，支持弹窗 Top Layer、Esc 先收起浮层不关外层弹窗、移动端 44px 点击区与 ≥16px 字号、键盘与减少动效；交付说明按要求区分来源。

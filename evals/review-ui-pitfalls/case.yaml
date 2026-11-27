@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: review-ui-pitfalls
+expected_outcome: |
+  一份只读审查报告 review.md（不改源码）：按影响排序，带选择器/测量值或引用证据、白话原因与具体修法，准确检出 files/workspace-panel.html 中的 5 类真实陷阱：月历 11 月 18 日 18 条事件无上限撑爆整行网格、弹窗内因 #legacyBody 失效选择器与 p{margin:0} 导致提示块与「重新检测」按钮 0px 贴死、同工具栏和弹窗混用 8px/10px/9999px 圆角且多行卡片按钮被 28px 高度压扁、页头漏出草稿备注词「看谁的」，以及普通用户隐私页堆砌冗余说明并混入底层 API Key / WSS 地址等开发者配置。

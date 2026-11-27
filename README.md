@@ -7,7 +7,7 @@ A Claude skill for rebuilding the feel of **Path** (the private social journal a
 ## 里面有什么
 
 - **设计精华和规则**（`references/essence.md`）：Path 的七条取向、两代骨架、十个模式；十四条规则（动作从哪来、动作分五级、平时是静的、就地发生、跟手的门槛、每类内容一个色相和一个字形、按下就有反应……），以及「推一个新东西」的步骤。
-- **审和改已有界面**（`references/review-checklist.md`、`references/existing-ui.md`）：交付前的 15 条快速自查；按 Path 的思路审一个已有界面，问题怎么写、怎么排；改一个已经在跑的界面时先跑通原样、列功能路径表；交给工程师的规格表。
+- **设计系统与审改规范**（`references/design-system.md`、`references/review-checklist.md`、`references/existing-ui.md`）：三层表面与控件圆角/触控规则（含通用下拉、日期/时间选择器、响应式按钮高度、弹窗同源与高密度网格上限，以及二级详情连续性、标题首句防复读、长文本非对称双栏与折叠检索）；交付前快速自查；按 Path 的思路审、改已有界面并检查七类高频陷阱。
 - **AI 对话里的卡片**（`references/ai-views.md`）：什么时候出卡片、对话里的一眼和点开的工作面、数据进话出、每个请求都收口、样子从数据来、满空错忙四种状态、卡片里的底线。
 - **取值表**（`references/motion-spec.md`）：时长、路径、角度、颜色。每个数字都标了来源：录屏逐帧实测、开源复刻代码，或者估的。
 - **path-kit**（`assets/path-kit/`）：零依赖的 JS/CSS，带 TypeScript 类型。
