@@ -1,0 +1,8 @@
+interface:
+  display_name: "Path UI"
+  short_description: "Path-inspired tactile UI, motion kit & design review"
+  brand_color: "#F33F12"
+  default_prompt: "Use $path-ui to design, build, or review a tactile web UI with Path-inspired motion and restraint."
+
+policy:
+  allow_implicit_invocation: true

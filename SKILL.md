@@ -1,144 +1,158 @@
 ---
 name: path-ui
-description: Replicate the UI and interaction feel of Path, the private social journal app (2010–2018), and extend its way of designing to things Path never had. Covers the arc-burst + button, scrollbar clock, type-dot timeline, in-place emotion picker, swinging drop modals, elastic pull-to-refresh and debossed loaders, plus rules distilled from them (where motion comes from, motion ranked by importance, stillness at rest, in-place feedback, one hue and one glyph per content type) for designing, reviewing or reworking UIs in Path's spirit, including the cards and views an AI assistant shows in a chat. Ships measured timings and colors, a zero-dependency JS/CSS kit with TS types, demos and checking scripts. Use whenever the user mentions Path, 复刻 Path、Path 风格、Path 的效果/动效/交互/思路/感觉、像 Path 那样, or asks for a radial/fan-out + menu, a scrolling time indicator, a family/private timeline, emotion reactions, bouncy drop modals, AI 对话里的结果卡/选项卡 or similar crafted micro-interactions, even if Path isn't named.
+description: >-
+  Replicate the tactile UI and motion feel of Path (2010–2018) on the web and extend its
+  principles to new surfaces (forms, settings, detail views, AI chat result cards) or review
+  and rework existing UIs. Ships measured timings/colors, a zero-dependency JS/CSS kit with
+  TS types, demos, and verification scripts. Use whenever the user mentions Path, 复刻 Path,
+  Path 风格/动效/交互/思路, or asks for an arc-burst + menu, scrollbar clock, type-dot timeline,
+  in-place emotion picker, swinging drop modals, AI 对话卡片, or tactile restrained micro-interactions.
+  Skip when no UI/UX work is involved or another design language (e.g. native Apple Liquid Glass
+  or Material) is explicitly requested.
 license: MIT
+metadata:
+  author: rowline
+  version: "0.5.0"
+  short-description: Path-inspired tactile UI, motion kit, design system & review
 ---
 
-# 复刻 Path 的效果，按 Path 的思路做新东西
+# Path UI — 复刻质感交互，并按它的思路做新界面
 
-Path（2010–2018，2015 年被 Kakao 收购）是一个只给 50～150 位亲近的人看的日记式社交软件，以动效和细节出名。这个 skill 放了三样东西：
-- Path 的设计精华，以及从中归纳出的规则；
-- 实测的节奏和颜色；
-- 用零件拼成、可以直接跑的参考实现。
+把 **Path（2010–2018）**「平静纸面 + 克制而有重量的反馈 + 就地完成小事」的设计精华、实测节奏与配色、零依赖参考实现（`assets/path-kit/`）和自动核对脚本打成一套完整工作流。目标是让产出的界面不仅长得像，而且**动起来、用起来都像**，同时能推演出 Path 没做过的现代页面、表单、详情页与对话结果卡。
 
-目标是做出来的东西「动起来像 Path」，不只是长得像，而且 Path 没做过的东西也能照它的思路做出来。
+## 定位与核心原则
 
-## 先读什么
+1. **平时是静的，动效只解释状态变化**：除了压印加载（`.pk-deboss` / `relayLoader`），不给静态界面加呼吸、漂浮或无限循环动画。
+2. **热闹和品牌色只给一处**：第一级动效与品牌红只留给产品最核心的入口；不要把扇形弹出或掉落弹窗套到设置、筛选或每个普通按钮上。
+3. **两代骨架不混用，参数可调不改源码**：Path 2（拟物、角标四分之一圆、0.5s、不压暗）与 Path 4（扁平、底栏居中 120° 弧、0.3s、压暗 60%）选定一套贯彻到底；需要调整节奏时用 `config` / `motion` / `setIntensity`，不手抄或硬改 kit。
+4. **先跑后说，实测为准**：先用 demo 对照，交付前必须经过静态检查与真实浏览器测量；说明里写出的每个数字和能力都要能指到实测或代码。
 
-| 想做的 | 读 |
+## 意图识别与默认决策
+
+先根据用户需求、附件和当前仓库代码判断以下六个维度。仅当关键维度缺失且会改变交付形态、又无法从上下文推断时，合并成一条简短问题向用户确认；其余直接按默认值推进并在交付时说明。
+
+| 维度 | 选项 | 默认值与处理规则 |
+| --- | --- | --- |
+| 目标（Goal） | 新建（复刻/延伸） · 改已有界面 · 审已有界面 · 写规格表 | 「审界面」只输出问题清单，用户点头再改；需求不明确时默认新建网页原型 |
+| 复刻 vs 延伸 | 复刻（发布菜单、时间线、时钟、情绪回应、弹窗、下拉刷新、星标、压印加载） · 延伸（表单、设置、列表、详情、AI 卡片等） | 同一页面常两者并存；凡 Path 没有的控件/布局一律按延伸六步推演，不强套原组件 |
+| 代际（Era） | Path 4 扁平 · Path 2 拟物 | 默认 **Path 4**（网页 0.3s 更合适）；用户提及「拟物」「左下/右下角加号」时切 **Path 2** |
+| 强度（Intensity） | 原样（`1`） · 克制（`0.3–0.5`） | 展示/复刻原型用 `1`；严肃工具、办公、已有设计系统接入默认 `0.4`（只压幅度，不压时长与位移） |
+| 媒介（Medium） | 单文件 HTML · 原生工程 · React/TS · Tailwind · 设计文档/规格 | 未指定独立交付形式且需「双击打开」时用单文件 HTML（最后由 `inline_kit.py` 内联） |
+| 设计系统约束 | 独立全站新建 · 接入已有设计系统 · 明确要求其他设计语言 | 接入已有系统时视觉听项目规范，kit 只供结构与动效（`intensity = 0.4`）；明确要求其他风格时本 skill 仅提供对比度、点击区、焦点与减少动效检查 |
+
+## System Map 与按需阅读组合
+
+**按需阅读（Progressive Disclosure）**：不要一次性全量读完所有 `references/`。先按任务确定最小阅读集：
+
+| 任务或媒介 | 先读的文档（只读所需章节） |
 | --- | --- |
-| 弄懂 Path 为什么这样设计、有哪些模式 | [references/essence.md](references/essence.md) 前半 |
-| 做 Path 没有的东西（设置页、通知、上传、清单……） | [references/essence.md](references/essence.md) 的「规则」「动作分五级」「推一个新东西」，再看 `assets/path-kit/extend-demo.html` |
-| 独立项目用这套风格做**全站 UI**（变量、深色模式、字体、按钮 / 表单 / 表格、桌面端多页、扇形菜单的另一种展开方式）。已有设计系统的项目以项目自己的规范为准 | [references/design-system.md](references/design-system.md) |
-| 配色和图标：底色、品牌色、类型色、状态色怎么分工，字形怎么画、怎么复用 | [references/essence.md](references/essence.md) 规则 11–13；实测色值在 [motion-spec.md](references/motion-spec.md) 第 7 节 |
-| 审一个已有界面：怎么看、怎么量、问题怎么写怎么排；交付前的快速自查 | [references/review-checklist.md](references/review-checklist.md) |
-| 改一个已经在跑的界面，或者写规格表交给工程师 | [references/existing-ui.md](references/existing-ui.md) |
-| AI 助手在对话里给的卡片和视图（结果卡、几个选项、要填的几项、预览）：要不要出、一眼和点开、数据进话出、状态和底线 | [references/ai-views.md](references/ai-views.md)，再看 `extend-demo.html` 第三块 |
-| 要具体数字（时长、路径、角度、颜色、零件默认值），或想调强度、图标数、方向 | [references/motion-spec.md](references/motion-spec.md) |
-| 把代码接进项目（单文件、原生、React/TS、Tailwind、已有设计系统的项目），或用零件拼新东西 | [references/porting.md](references/porting.md) |
-| 直接看效果 | `assets/path-kit/demo.html`（Path 有的）、`assets/path-kit/extend-demo.html`（按规则推的） |
+| 理解 Path 模式与 14 条规则、推新东西 | [references/essence.md](references/essence.md) |
+| 独立项目做全站 UI（双主题、三层表面、表单/选择器、表格、弹窗、多页主角） | [references/design-system.md](references/design-system.md) |
+| 审一个已有界面 / 交付前 15 条快速自查 / 核查七类实战陷阱 | [references/review-checklist.md](references/review-checklist.md) |
+| 改一个已经在跑的界面 / 写工程师规格表 | [references/existing-ui.md](references/existing-ui.md) |
+| AI 对话里的卡片与工作面（结果卡、选择卡、预览与安全底线） | [references/ai-views.md](references/ai-views.md) |
+| 查精确时长、弹簧参数、颜色取色、零件默认值与测量方法 | [references/motion-spec.md](references/motion-spec.md) |
+| 接进单文件 / 原生 / React+TS / Tailwind / 已有系统、假数据时间锚点 | [references/porting.md](references/porting.md) |
+| 直观查看效果对照 | `assets/path-kit/demo.html`（复刻）、`assets/path-kit/extend-demo.html`（延伸） |
 
-## 做法
+## 核心规则速查（Digest）
 
-1. **先定五件事。** 能问就问；用户要你直接出东西，就按默认值做，交付时写明你替他定了什么。
-   - **要做什么**：新做（下面的复刻或延伸）、改一个已经在跑的界面、审一个已有界面、写规格交给别人做。改的做法看 [references/existing-ui.md](references/existing-ui.md)，审的做法和问题怎么写看 [references/review-checklist.md](references/review-checklist.md)，规格表在 existing-ui.md 最后一节。AI 在对话里给的卡片照 [references/ai-views.md](references/ai-views.md) 做。审的时候只出问题清单，用户点头再改。
-   - **复刻还是延伸**：用户要的东西 Path 有（发布按钮、时间线、滚动时钟、情绪回应、弹窗、下拉刷新、星标、加载），就照原样**复刻**。Path 没有的（设置页、通知、上传、购物清单、日程……），或者只说「要 Path 的感觉 / 思路」，就是**延伸**，按第 4 步推。一个页面里常常两样都有。
-   - **哪一代**：
-     - Path 2 拟物：加号在角落、四分之一圆、0.5 秒、错开 36ms、不压暗。
-     - Path 4 扁平：加号在底栏正中、120° 弧、0.3 秒、压暗 60%。
-     - 两代混用会哪代都不像。没说就用 Path 4，网页上 0.3 秒更合适。用户说了「拟物」「左下角 / 右下角的加号」就是 Path 2。
-   - **强度**：原样（1）还是克制（0.3–0.5）。严肃、办公、工具类场景用克制。
-     - 强度只压幅度（冲过头、自转、摆动、歪斜、放大），不压时长和位移。所以克制版照样从上面掉下来、照样摔出去，只是晃得轻。
-     - 压暗深浅另用 `scrim` 参数调。
-2. **先跑 demo，对着看。** 在 `assets/path-kit/` 下起静态服务：`python -m http.server 5181`。
-   - `demo.html`：面板能切时代、强度、图标数、加号在哪边。
-   - `extend-demo.html`：三个 Path 没有的东西（上传照片、滑动归档、AI 在对话里给的结果卡），每一步都标了按哪条规则推的。
-   - 用户要看效果时先给 demo，不要只给文字描述。
-3. **用 path-kit，不要手抄。**
-   - 页面照常写 `import { … } from './path-kit.js'` 和 `<link href="path-kit.css">`。
-   - 要单文件（「双击就能打开」）：写完再跑 `python scripts/inline_kit.py 页面.html`，它把 kit 原样内联进去。手抄几百行既费时间，也容易抄错数字。
-   - 要调就用参数和 `motion` 对象，不改 kit 源码：
-     - 图标几个都行，间隔和半径会自己算。
-     - 角落版加号放右边会自动镜像（`side`）。
-     - `config` 覆盖菜单的任意字段；`dropModal` 有 `scrim`、`role`；`timeScroller` 有 `thumb`。
-     - 页面里改 `motion.clock.hideDelayMs = 1500` 这样的字段。
-     - 改过的数字在交付时列出来，并说明是测的还是你定的。
-   - 新东西用零件拼：`flyFrom`、`flyTo`、`fly`、`growFrom` / `shrinkTo`、`pop`、`fadeIn` / `fadeOut`、`dropIn` / `fallOut`、`turnTo`、`rubber`、`.pk-deboss`。不要另写一套弹簧和曲线。各零件的用法和坑见 porting.md「用零件拼新东西」。
-   - 颜色和字形也用 kit 的：类型色 `--pk-type-*`、筛选色 `--pk-filter-*`、私密蓝 `--pk-private`；字形 `glyphSvg(id)`（17 个原创实心剪影）；筛选块 `.pk-chip`。要过网页对比度就在容器上加 `data-pk-contrast="more"`。
-   - React / TypeScript 项目用 `path-kit.d.ts` 拿类型，接法见 porting.md。
-4. **延伸时，按规则推，不要把 Path 的组件到处套。** 照 essence.md「推一个新东西」的六步做：
-   1. 列出新东西所有的状态变化。
-   2. 每个变化都问：谁叫出来的，放第几级，要不要打断用户。
-   3. 用零件拼。
-   4. 配颜色和字形：底是中性的，每种内容类型一个色相、一个字形，品牌色只给最核心的入口，状态色最多一个（规则 11–13）。
-   5. 对一遍规则 5、6、10–14。
-   6. 交付时分三类说。
+详细出处、反例与实测依据见 [references/essence.md](references/essence.md) 与 [references/motion-spec.md](references/motion-spec.md)。
 
-   最容易犯的错有三个：
-   - 把扇形弹出、掉落弹窗套到每个按钮上。热闹只给一处：第一级只给产品最核心的那一个入口，设置项、筛选、分享都不配。
-   - 加循环动画显得「活泼」。
-   - 每类事件各做一种动效。
+- **1. 从哪来，回哪去**：面板从触发器长出、条目飞入列表、收起按原路退回（`flyFrom` / `flyTo` / `growFrom` / `shrinkTo`）。
+- **2. 方向有含义，重力朝下**：前进/后退、开/关、加/减各成镜像方向；来者自上或自源头，去者向下摔出（`turnTo` / `dropIn` / `fallOut`）。
+- **3. 有重量，但很短**：120–500ms（网页接近 300ms）；东西越大摆动与过冲越小；减少动态效果时替换为淡入淡出或直达终态。
+- **4. 热闹和颜色只给一处**：核心入口独占 1 级动效与品牌色，其余按五级表降档。
+- **5. 一类事一种动作，一种东西一个符号**：同类打断、出现、离场全站统一动效；同一种内容类型从入口到空状态用同一个色相和字形。
+- **6. 平时是静的**：只响应用户操作、新内容到达或加载；等完即停，不用常驻循环晃动吸引注意。
+- **7. 就地发生，不把人带走**：小事在触发控件旁原地完成；能撤销就不弹确认，仅不可逆破坏操作用 `dropModal(alertdialog)`。
+- **8. 先回答「什么时候、谁看得到」**：交代相对时间（当天不写日期、周内写星期几、当年写几月几日、跨年带年份）与可见范围。
+- **9. 跟手，门槛看得见**：拖动带阻尼（`rubber`），过阈值给可见变化（断开/弹出/变色），并保留按钮与键盘等效操作。
+- **10. 没人注意的地方也做**：等待延迟 300–500ms 露面、至少留 500ms（`relayLoader` 默认 400ms/500ms）；空状态、到底、出错都配压印字形（`.pk-deboss`）与人话说明。
+- **11. 底是中性的，颜色留给内容和意思**：暖纸底 `#F6F0EB`、白卡与暖深灰正文；颜色只给核心入口、内容类型和至多一个状态色（私密蓝 `--pk-private`）。
+- **12. 一类东西一个颜色，按联想选，一路带着走**：色相有语义理由；压暗层上用白底彩字形，纸上用彩底白字形；图片/视频类自身有色时用近黑或中性色；图形对比度 ≥ 3:1、文字 ≥ 4.5:1（可开 `data-pk-contrast="more"`）。
+- **13. 一套字形，换尺寸、换材质，不换形状**：24 网格、实心、圆头、细节镂空（复用 `glyphSvg(id)` 的 17 个原创剪影）；导航底栏用细线、当前项变实心。
+- **14. 按下就有反应，每种状态都说得清**：60ms 内给按下反馈、松手执行、拖出取消；选中不只靠颜色；禁用可见并写明原因；忙碌态放进控件自身；焦点清晰、点击区 ≥ 44×44px。
 
-   真用到扇形弹出菜单时，底线里的专利提醒照样适用。
-5. **换成项目自己的东西。**
-   - 表情、封面、文案用项目自己的；颜色通过 `--pk-*` 变量映射到项目的设计变量。
-   - 图标用项目自己的，或者 kit 的原创字形 `glyphSvg`。要新画的照规则 13 画：24 网格、实心、圆头、细节镂空，和已有的字形放在一起看是一家人。
-   - 界面上不写 Path 这个名字：页面标题、说明面板、按钮、读屏文字都算。「照 Path 4 的节奏」「按规则 1」这类来源说明，写在代码注释和交付说明里。
-   - 假数据的时间相对现在生成，并覆盖要演示的每一种情况。
-     - 写死日期的话，明天打开，「今天」「星期几」就全错了。
-     - 只用固定偏移（「两小时前」「40 天前」）也不行：零点刚过或 1 月初会缺档。
-     - 用 porting.md「假数据的时间」里的锚点。
-   - 项目已经有自己的设计系统时：视觉以项目的规范为准，path-kit 只提供结构和动效，强度默认 0.4。具体见 porting.md 最后一节。
-6. **核对，不靠想象。**
-   - **静态检查**：每个产出的 HTML 都跑 `python scripts/check_prototype.py 页面.html`。
-     - 它能查出：界面上的 Path 字样、引用 Path 素材、没处理减少动效、弹窗没处理 Esc、多余的循环动画、写死的日期、单文件里残留的本地引用。
-     - 有 error 先改掉；warning 想一下，确实有理由就在交付时说明。
-   - **浏览器里量动效**：把 `scripts/motion-probe.js` 注入页面，用 `PathProbe.scrub(…)` 定格取样，再拿 `PathProbe.peaks(…)` 给出的冲过头距离、自转、停稳时刻对照 motion-spec 的表。
-     - 开和关都要量，并且在「打开到一半」时关一次。`startJump` 不为 0，就是动画开头跳了一下。
-   - **浏览器里查五件事**：开「减少动态效果」后不移动、不缩放、不转，状态照样变；键盘能用（Esc、方向键、焦点回位）；点击区实测够 44px（`PathProbe.hitAreas()`）；控制台没有报错；彩底上的字和字形够对比度（字 4.5:1，图形 3:1；`python scripts/contrast.py --on 底色`），不够就开 `data-pk-contrast="more"` 或改深色字。
-   - **最后过一遍快速自查**：[references/review-checklist.md](references/review-checklist.md) 第 1 节的 15 条。延伸出来的东西还要把每条状态变化都走一遍：成功、失败、空、撤销。
-   - **没有可视的浏览器窗口时**（或不能用内置浏览器），命令行的无头 Chrome / Edge 也算。例如用 Playwright 连系统里的浏览器，用 `emulateMedia({ reducedMotion: 'reduce' })` 测减少动效。只有静态检查不能代替这一步。
-   - **对照原版**：截图和 Path 录屏比。素材的在线地址见 essence.md 末尾「素材」；用 `scripts/frame-sheet.js` 在 web.archive.org 上拼帧。
-7. **交付时说清楚，说的都要做到。**
-   - 复刻了哪几块、哪一代、什么强度、替用户定了什么、改了哪些默认数字。
-   - 延伸的部分分三类写：
-     - 照搬 Path 的：哪个模式。
-     - 按规则推的：哪一条。
-     - 规则推不出来、你自己定的。
-   - 规则是归纳出来的，不要说成「Path 官方就是这么做的」。
-   - 哪些数字是估的，哪些没在真实浏览器或设备上看过。没开浏览器就直说「只做了静态检查」。
-   - 交付说明里写的每一项能力（键盘、减少动效、点外面收回、焦点回到哪……）都要在代码里找得到，最好是跑过的。kit 的行为照 porting.md 的原话说，别往大了说。发出去前对一遍。
-   - 说明里让用户自己改的地方（强度、某个数字、换成原生滚动条），页面里要已经留好入口，照着改就能生效。单文件里只有 import 过的名字存在：叫用户「加一行 setIntensity」之前，先确认它被 import 了。
-   - 跟时间有关的说法（例如「四种日期写法都看得到」）要在任何一天打开都成立；不成立就写明例外。
-   - 审查和说明里的每个数、每个「量过」「做了」「转义了」，都要能指到一次实测或一行代码。核对不了的，放进「没验证」，不要写成结论。做得越多越容易漏一条：发出去前把说明里的实测数字逐条重跑一遍。
+### 动作分五级
 
-## 底线
+| 级 | 动作特征 | Path 用处 | 延伸新东西用处 | path-kit 零件 |
+| --- | --- | --- | --- | --- |
+| 1 | 冲出 + 自转 + 压暗 | 加号发布菜单 | 全站唯一最核心入口 | `radialMenu`、`fly` |
+| 2 | 掉进来 / 摔出去 | 登录、功能引导 | 必须停下拿主意：删除、清空、首次引导 | `dropModal`、`dropIn` / `fallOut` |
+| 3 | 冒一下（1.15–1.35×） | 回应、星标、落位 | 新出现的小物件、开关/收藏切换 | `pop`、`popToggle` |
+| 4 | 长出来 / 淡入（≤ 200ms） | 回应浮层、时钟标签 | 面板、菜单、选择器、就地提示 | `growFrom`、`fadeIn` / `fadeOut` |
+| 5 | 不动 | 时间线、封面、正文 | 内容正文、导航结构、普通设置项 | — |
 
-- **不用 Path 的品牌资产，界面上也不写 Path 的名字。** 标志、字标、贴纸画、照片、原图标都不用；demo 里的图标和表情也是原创的简笔画。要复刻的是行为、节奏和结构，这些可以照做；外观素材必须自己画。
-- **发布按钮有有效专利。** Path 的「从菜单图标沿路径弹出子图标来发内容」有美国专利 US9448692B1，现由 Kakao 持有，预计 2034-07-16 到期。
-  - 做原型、学习没有问题。
-  - 用户要把这个菜单用在上线的商用产品里时，要明确提醒他先请法务评估，或者换一种展开方式（例如不沿弧线弹出）。
-  - 延伸时推出了扇形弹出菜单，也要提醒。
-  - 不要替用户下「不侵权」的结论。
-- **动效只在状态变化时出现。** 不要为了「像 Path」给静态内容加循环动画。Path 平时是静的，压印加载是唯一的循环动画。
-- **减少动效和键盘可用性不能省。** path-kit 已经处理好了，移植时别丢。延伸出来的拖动手势，要配一个按钮能做同样的事。
+## 标准工作流
 
-## 目录
+1. **启动演示对照（需直观展示或校准手感时）**：
+   在 `assets/path-kit/` 下执行 `python3 -m http.server 5181`，对照 `demo.html` 与 `extend-demo.html`（支持切换时代、主题、加深对比度、强度、图标数与位置）。
+2. **复用 `path-kit`，禁止手抄**：
+   - 页面正常引入 `path-kit.css` 与 `path-kit.js`（TypeScript 项目导入 `path-kit.d.ts`）。
+   - 用 `config`、`dropModal({ scrim, role })`、`timeScroller({ thumb })`、`motion.*`、`setIntensity(k)` 与 `--pk-*` 变量调节；改过的数字在交付时列明出处。
+   - 用零件拼新交互，不另写弹簧与缓动曲线（拼装细节与常见坑见 [references/porting.md](references/porting.md)）。
+   - 用 `glyphSvg(id)` 与 `--pk-type-*` / `--pk-filter-*` / `.pk-chip`，勿自创不一致图标体系。
+3. **延伸推演六步（当构建 Path 没有的功能时）**：
+   列出全部状态变化 → 逐项问来源/方向/级别/是否打断 → 用 kit 零件拼装 → 按规则 11–13 配色配字形 → 对照规则 5、6、10–14 与 [references/design-system.md](references/design-system.md)（如非原生选择器、响应式按钮高度、高密度网格折叠等）→ 交付时按「照搬 / 按规则推 / 自定」三类拆开说明。
+4. **替换项目资产与相对时间**：
+   - 表情、封面、文案换成项目自身内容；颜色映射到 `--pk-*` 变量；界面与无障碍文本中**禁止出现 `Path` 字样**（来源只写代码注释与交付说明）。
+   - 假数据时间一律使用相对当前时间的锚点（见 [references/porting.md](references/porting.md)「假数据的时间」），确保跨日/跨月演示依然成立。
+5. **多维度核对（不靠目测或想象）**：
+   - **静态检查**：对所有产出 HTML 运行 `python3 scripts/check_prototype.py <page.html>`，清零所有 `error`，合理解释保留的 `warning`。
+   - **对比度检查**：对彩底文字/字形运行 `python3 scripts/contrast.py --on <hex>`（文本 ≥ 4.5:1，图形 ≥ 3:1）。
+   - **浏览器实测**：注入 `scripts/motion-probe.js`，用 `PathProbe.scrub(...)` 与 `PathProbe.peaks(...)` 核对过冲、自转、停稳时刻及开关中断（`startJump === 0`）；用 `PathProbe.hitAreas()` 检查点击区 ≥ 44px；测试 `prefers-reduced-motion: reduce`（或 Playwright `emulateMedia({ reducedMotion: 'reduce' })`）、键盘（`Esc`、方向键、焦点回位）及控制台零报错。
+   - **状态走查**：完整过一遍开、关、中途打断、按下拖出、成功、失败、空状态、加载、深色/高对比度及 [references/review-checklist.md](references/review-checklist.md) 中的 15 条快速自查与七类实战陷阱。
 
-```
+## 分形态输出契约（Output Contracts）
+
+| 交付形态 | 必做处理与产物 | 必跑校验与交付说明要求 |
+| --- | --- | --- |
+| **单文件原型 HTML** | 正常引 `path-kit.css/js` 写完后，运行 `python3 scripts/inline_kit.py <page.html>` 内联（注意仅已 import 的符号才会进入单文件） | 跑 `check_prototype.py` + 浏览器实测；交付说明区分「照搬 Path / 按规则推 / 自定」，列出改动数字与未验证项 |
+| **工程项目接入** | 按 [references/porting.md](references/porting.md) 接入；已有设计系统保持其视觉规范，强度默认 `0.4` | 跑项目自身的 `typecheck` / 构建与浏览器自检；避免覆盖项目已有样式优先级 |
+| **审已有界面** | 先完整走查，**只输出按影响排序的问题清单**（严重问题在前），每条含位置证据与具体修复方案；获用户同意后再改代码 | 说明检查范围（静态源码 vs 实测浏览器/视口）；每条结论必须对应文件、行号或实测数据 |
+| **改已有界面** | 先跑通原样并列出功能路径表（分清真实接口与模拟状态），仅修改目标区域，演示控件与产品控件分离（见 [references/existing-ui.md](references/existing-ui.md)） | 改后复测原功能路径表 + 新增/修改项自查；不破坏无关功能 |
+| **AI 对话卡片与视图** | 按 [references/ai-views.md](references/ai-views.md) 判断是否出卡、区分「一眼」与「工作面」、数据进话出、控件就地收口、满/空/错/忙四态齐全 | 严守安全底线：卡内不要密码/密钥、不仿冒授权弹窗、外来内容纯文本转义防 XSS |
+| **交付工程师规格表** | 按 [references/existing-ui.md](references/existing-ui.md) 第 4 节输出状态、零件、数值、边界与验证口径 | 标清实测值 vs 估测值 |
+
+> **汇报纪律**：说明书与审查结论中提及的每一个数值、每一个「量过」「做了」「转义了」，都必须能指向一次真实执行输出或一行实际代码；未跑浏览器或未实测的项目，必须明确归入「未验证」，绝不虚报通过。
+
+## 硬性底线
+
+- **零品牌借用**：不使用 Path 的 Logo、字标、贴纸、照片、原图标；界面文字、`<title>`、`aria-label`、`alt`、`placeholder` 中不得出现 `Path` 字样。
+- **发布菜单专利提示**：Path 的「从菜单图标沿路径弹出子图标」受美国专利 **US9448692B1**（Kakao 持有，预计 2034-07-16 到期）保护。原型与学习可用；**任何上线商用产品若使用该扇形/沿路径弹出菜单，必须明确提醒用户先做法律评估或改用非沿弧线展开方案**（见 [references/design-system.md](references/design-system.md)），绝不替用户下「不侵权」结论。
+- **克制与可访问性**：不加装饰性循环动画；保留 `prefers-reduced-motion` 替代方案与键盘完整操作；所有拖动手势必须有可见等效按钮。
+
+## 环境要求与目录结构
+
+- **运行环境**：脚本使用 **Python 3.10+**（`check_prototype.py` / `inline_kit.py` / `contrast.py` / `package_skill.py` 仅依赖标准库；`validate_skill.py` 需要 `PyYAML`）；浏览器测量需要现代浏览器或无头 Chromium。
+
+```text
 path-ui/
-├── SKILL.md
+├── SKILL.md                    Skill 入口与标准工作流
+├── LICENSE                     MIT 许可证（不含原权利人商标/素材）
+├── agents/
+│   └── openai.yaml             Codex / OpenAI UI 元数据与调用策略
 ├── references/
-│   ├── essence.md          设计精华：七条取向、两代骨架、十个模式；十四条规则（含颜色、字形和控件状态）、动作分五级、推一个新东西；不要照搬的
-│   ├── design-system.md    独立项目的全站规范：双主题与三层表面、字号、按钮/表单/列表/表格/弹窗、多页主角与验收（取值多为自定）
-│   ├── review-checklist.md 快速自查 15 条；审一个已有界面的做法、问题怎么写怎么排
-│   ├── existing-ui.md      改一个已有界面（先跑通原样、功能路径表、分清模拟）；交付规格表
-│   ├── ai-views.md         AI 在对话里给的卡片和视图：要不要出、一眼和点开、数据进话出、样子从数据来、状态、底线
-│   ├── motion-spec.md      时长、路径、角度、颜色，每个数字标了来源；强度、图标数、方向的规则；零件的默认值
-│   └── porting.md          单文件 / 原生 / React+TS / Tailwind / 已有设计系统的接法；用零件拼新东西
+│   ├── essence.md              七条取向、两代骨架、十个模式、十四条规则、动作五级
+│   ├── design-system.md        独立项目全站规范：表面、字号、表单/选择器、表格、弹窗与多页验收
+│   ├── review-checklist.md     15 条快速自查；审已有界面方法与七类实战陷阱
+│   ├── existing-ui.md          改已有界面方法与交付规格表
+│   ├── ai-views.md             AI 对话里的卡片与工作面设计规范
+│   ├── motion-spec.md          实测/开源来源的时长、弹簧、颜色取值与测量方法
+│   └── porting.md              单文件 / 原生 / React+TS / Tailwind / 已有系统接法与零件指南
 ├── assets/path-kit/
-│   ├── path-kit.js         零件：fly、flyFrom、flyTo、growFrom、shrinkTo、pop、fadeIn、fadeOut、dropIn、fallOut、turnTo、rubber
-│   │                       组件：radialMenu、timeScroller、reactionPicker、popIn、dropModal、pagerDots、coverHeader、
-│   │                       pullToRefresh、popToggle、relayLoader；setIntensity、motion
-│   │                       字形：glyphSvg、GLYPHS（17 个原创实心剪影）
-│   ├── path-kit.d.ts       上面这些的 TypeScript 类型
-│   ├── path-kit.css        变量（p4 / p2 皮肤、浅/深主题、类型色、筛选色、私密蓝、加深版）、组件样式、.pk-chip 筛选块、.pk-deboss 压印
-│   ├── demo.html           手机大小的家庭时间线，Path 有的效果都能点；面板能切深色、加深色，列着类型色和字形
-│   └── extend-demo.html    Path 没有的三个东西：上传照片、滑动归档、对话里的结果卡，每一步标了规则
+│   ├── path-kit.js             动作零件、交互组件、glyphSvg（17 个原创字形）与 motion 控制
+│   ├── path-kit.d.ts           TypeScript 类型定义
+│   ├── path-kit.css            双代皮肤、浅深主题、类型/筛选色、对比度增强与压印样式
+│   ├── demo.html               Path 复刻交互演示面板
+│   └── extend-demo.html        延伸示范：上传照片、滑动归档、AI 对话结果卡
 └── scripts/
-    ├── inline_kit.py       把 path-kit 内联进页面，得到双击能开的单文件
-    ├── check_prototype.py  静态检查底线：品牌字样、减少动效、Esc、循环动画、写死的日期、本地引用
-    ├── contrast.py         算对比度：两色之间、某个底上用白字还是深色字、kit 的类型色和筛选色
-    ├── motion-probe.js     在浏览器里定格取样动画，量冲过头、自转、停稳时刻、开头有没有跳；量点击区
-    └── frame-sheet.js      在 web.archive.org 上把 Path 录屏拼成帧网格，用来量动效和取色
+    ├── inline_kit.py           将 path-kit 内联进 HTML 生成双击可开的单文件
+    ├── check_prototype.py      静态检查底线（品牌词、减少动效、Esc、循环动画、硬编码日期、本地引用）
+    ├── contrast.py             WCAG 对比度计算与底色/字体配色校核
+    ├── motion-probe.js         浏览器动画定格取样、峰值与点击区测量工具
+    ├── frame-sheet.js          从 web.archive.org 拼帧辅助工具
+    ├── validate_skill.py       Skill 规范、链接、evals、demo 底线与打包完整性一键校验
+    └── package_skill.py        生成可分发安装包 path-ui.skill（不含 evals 与 vendor-skills）
 ```

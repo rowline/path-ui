@@ -1,0 +1,68 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && pip install pyyaml
+
+      - name: Validate skill
+        run: python3 scripts/validate_skill.py
+
+      - name: Package path-ui.skill
+        run: python3 scripts/package_skill.py -o dist/path-ui.skill
+
+      - name: Extract release notes from CHANGELOG.md
+        id: notes
+        run: |
+          python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+
+          tag = os.environ["GITHUB_REF_NAME"]
+          ver = tag.lstrip("v")
+          text = Path("CHANGELOG.md").read_text(encoding="utf-8") if Path("CHANGELOG.md").is_file() else ""
+          pattern = re.compile(rf"^## \[{re.escape(ver)}\][^\n]*\n(.*?)(?=^## \[|\Z)", re.M | re.S)
+          m = pattern.search(text)
+          out = Path("/tmp/release-notes.md")
+          if m and m.group(1).strip():
+              body = m.group(1).strip() + "\n\n---\n`path-ui.skill` 不含 `evals/` 与 `vendor-skills/`。"
+              out.write_text(body, encoding="utf-8")
+              print("has_notes=true")
+          else:
+              print("has_notes=false")
+          PY
+        >> "$GITHUB_OUTPUT"
+
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/path-ui.skill --clobber
+          elif [ "${{ steps.notes.outputs.has_notes }}" = "true" ]; then
+            gh release create "$GITHUB_REF_NAME" dist/path-ui.skill \
+              --title "path-ui $GITHUB_REF_NAME" \
+              --notes-file /tmp/release-notes.md
+          else
+            gh release create "$GITHUB_REF_NAME" dist/path-ui.skill \
+              --title "path-ui $GITHUB_REF_NAME" \
+              --generate-notes
+          fi
