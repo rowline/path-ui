@@ -300,10 +300,27 @@ def check_package() -> list[str]:
     return errors
 
 
+def check_workflows() -> list[str]:
+    """校验 .github/workflows/*.yml 的 YAML 语法。"""
+    errors: list[str] = []
+    wf_dir = ROOT / ".github" / "workflows"
+    if not wf_dir.is_dir():
+        return []
+    for wf in sorted(wf_dir.glob("*.y*ml")):
+        try:
+            data = yaml.safe_load(wf.read_text(encoding="utf-8"))
+            if not isinstance(data, dict):
+                errors.append(f"{wf.relative_to(ROOT)} 必须是 YAML 映射")
+        except yaml.YAMLError as exc:
+            errors.append(f"{wf.relative_to(ROOT)} YAML 解析失败: {exc}")
+    return errors
+
+
 def main() -> int:
     checks = [
         ("SKILL.md frontmatter & 占位符", check_skill_md),
         ("agents/openai.yaml 元数据", check_openai_yaml),
+        ("GitHub Actions workflow YAML", check_workflows),
         ("Markdown 相对链接完整性", check_markdown_links),
         ("evals/ 评测用例完整性", check_evals),
         ("Demo 静态底线检查", check_demos),

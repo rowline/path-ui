@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to release (e.g. v0.5.0)"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -11,9 +17,13 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -33,36 +43,39 @@ jobs:
         id: notes
         run: |
           python3 - <<'PY'
-          import os, re
+          import os
+          import re
           from pathlib import Path
 
-          tag = os.environ["GITHUB_REF_NAME"]
+          tag = os.environ["RELEASE_TAG"]
           ver = tag.lstrip("v")
           text = Path("CHANGELOG.md").read_text(encoding="utf-8") if Path("CHANGELOG.md").is_file() else ""
           pattern = re.compile(rf"^## \[{re.escape(ver)}\][^\n]*\n(.*?)(?=^## \[|\Z)", re.M | re.S)
           m = pattern.search(text)
           out = Path("/tmp/release-notes.md")
+          gh_out = Path(os.environ["GITHUB_OUTPUT"])
           if m and m.group(1).strip():
               body = m.group(1).strip() + "\n\n---\n`path-ui.skill` 不含 `evals/` 与 `vendor-skills/`。"
               out.write_text(body, encoding="utf-8")
-              print("has_notes=true")
+              with gh_out.open("a", encoding="utf-8") as f:
+                  f.write("has_notes=true\n")
           else:
-              print("has_notes=false")
+              with gh_out.open("a", encoding="utf-8") as f:
+                  f.write("has_notes=false\n")
           PY
-        >> "$GITHUB_OUTPUT"
 
       - name: Create or update GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" dist/path-ui.skill --clobber
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" dist/path-ui.skill --clobber
           elif [ "${{ steps.notes.outputs.has_notes }}" = "true" ]; then
-            gh release create "$GITHUB_REF_NAME" dist/path-ui.skill \
-              --title "path-ui $GITHUB_REF_NAME" \
+            gh release create "$RELEASE_TAG" dist/path-ui.skill \
+              --title "path-ui $RELEASE_TAG" \
               --notes-file /tmp/release-notes.md
           else
-            gh release create "$GITHUB_REF_NAME" dist/path-ui.skill \
-              --title "path-ui $GITHUB_REF_NAME" \
+            gh release create "$RELEASE_TAG" dist/path-ui.skill \
+              --title "path-ui $RELEASE_TAG" \
               --generate-notes
           fi
